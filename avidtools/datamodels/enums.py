@@ -55,12 +55,12 @@ class SepEnum(str, Enum):
     P0404 = 'Environmental safety'
         
 class LifecycleEnum(str, Enum):
-    L01 = 'L01 = Business Understanding'
-    L02 = 'L02 = Data Understanding'
-    L03 = 'L03 = Data Preparation'
-    L04 = 'L04 = Model Development'
-    L05 = 'L05 = Evaluation'
-    L06 = 'L06 = Deployment'
+    L01 = 'L01: Business Understanding'
+    L02 = 'L02: Data Understanding'
+    L03 = 'L03: Data Preparation'
+    L04 = 'L04: Model Development'
+    L05 = 'L05: Evaluation'
+    L06 = 'L06: Deployment'
 
 class ClassEnum(str, Enum):
     aiid = 'AIID Incident'
