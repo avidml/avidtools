@@ -1,46 +1,50 @@
-from enum import Enum
 from typing import Dict, List, Optional
 from typing_extensions import TypedDict
+from pydantic import BaseModel
 
 from .enums import *
 
-class LangValue(TypedDict):
+class LangValue(BaseModel):
     lang: str
     value: str
 
-class Artifact(TypedDict):
+class Artifact(BaseModel):
     type: ArtifactTypeEnum
     name: str
 
-class Metadata(TypedDict):
+class Detection(BaseModel):
+    type: MethodEnum
+    name: str  
+
+class Metadata(BaseModel):
     report_id: str
 
-class Affects(TypedDict):
+class Affects(BaseModel):
     developer: List[str]
     deployer: List[str]
     artifacts: List[Artifact]
         
-class Problemtype(TypedDict):
+class Problemtype(BaseModel):
     classof: ClassEnum
     type: TypeEnum
     description: LangValue
         
-class Metric(TypedDict):
+class Metric(BaseModel):
     name: str
     features: Dict
-    detection_method: Dict[MethodEnum, str]
+    detection_method: Detection
 
-class Reference(TypedDict):
+class Reference(BaseModel):
     type: Optional[str]
     label: str
     url: str # AnyUrl is a better fit, but keeping this because submissions are not standard yet
 
-class AvidTaxonomy(TypedDict):
+class AvidTaxonomy(BaseModel):
     vuln_id: Optional[str]
     risk_domain: List[str]
     sep_view: List[SepEnum]
     lifecycle_view: List[LifecycleEnum]
     taxonomy_version: str
         
-class Impact(TypedDict):
+class Impact(BaseModel):
     avid: AvidTaxonomy

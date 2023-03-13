@@ -17,10 +17,10 @@ def convert_case_study(case_study):
     report.affects = Affects(
         developer = [],
         deployer = [case_study['target']],
-        artifacts = Artifact(
+        artifacts = [Artifact(
             type = ArtifactTypeEnum.system,
             name = case_study['target']
-        )
+        )]
     )    
     
     report.problemtype = Problemtype(
@@ -53,10 +53,12 @@ def convert_case_study(case_study):
     )
     
     if 'reporter' in list(case_study.keys()):
-        report.credit = LangValue(
-            lang = 'eng',
-            value = case_study['reporter']
-        )
+        report.credit = [
+            LangValue(
+                lang = 'eng',
+                value = case_study['reporter']
+            )
+        ]
         
     report.reported_date = case_study['incident-date']
     
