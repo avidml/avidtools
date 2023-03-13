@@ -14,10 +14,7 @@ class Artifact(BaseModel):
 
 class Detection(BaseModel):
     type: MethodEnum
-    name: str  
-
-class Metadata(BaseModel):
-    report_id: str
+    name: str
 
 class Affects(BaseModel):
     developer: List[str]
@@ -26,7 +23,7 @@ class Affects(BaseModel):
         
 class Problemtype(BaseModel):
     classof: ClassEnum
-    type: TypeEnum
+    type: Optional[TypeEnum]
     description: LangValue
         
 class Metric(BaseModel):
