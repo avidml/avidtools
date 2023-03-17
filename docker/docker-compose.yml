@@ -1,0 +1,16 @@
+version: '3'
+name: AvidDB
+services:
+  avidrango:
+      image: arangodb/arangodb
+      environment:
+        - ARANGO_NO_AUTH=0
+        - ARANGO_ROOT_PASSWORD=avid
+      ports:
+        - '8529:8529'
+      volumes:
+        - arango_data:/var/lib/arangodb3
+        - arango_apps:/var/lib/arangodb3-apps
+volumes:
+  arango_data:
+  arango_apps:
