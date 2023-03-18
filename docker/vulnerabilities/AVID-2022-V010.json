@@ -1,0 +1,63 @@
+{
+    "data_type": "AVID",
+    "data_version": "0.1",
+    "metadata": {
+        "vuln_id": "AVID-2022-V010"
+    },
+    "affects": {
+        "developer": [
+            "Facebook"
+        ],
+        "deployer": [
+            "Facebook"
+        ],
+        "artifacts": [
+            {
+                "type": "System",
+                "name": ""
+            }
+        ]
+    },
+    "problemtype": {
+        "classof": "AIID Incident",
+        "description": {
+            "lang": "eng",
+            "value": "Meta\u2019s BlenderBot 3 Chatbot Demo Made Offensive Antisemitic Comments"
+        }
+    },
+    "references": [
+        {
+            "label": "Incident 278: Meta\u2019s BlenderBot 3 Chatbot Demo Made Offensive Antisemitic Comments",
+            "url": "https://incidentdatabase.ai/cite/278"
+        }
+    ],
+    "description": {
+        "lang": "eng",
+        "value": "The publicly launched conversational AI demo BlenderBot 3 developed by Meta was reported by its users and acknowledged by its developers to have \u201coccasionally\u201d made offensive and inconsistent remarks such as invoking Jewish stereotypes."
+    },
+    "reports": [],
+    "impact": {
+        "avid": {
+            "risk_domain": [
+                "Ethics"
+            ],
+            "sep_view": [
+                "E0101: Group fairness",
+                "E0301: Toxicity",
+                "E0402: Generative Misinformation"
+            ],
+            "lifecycle_view": [
+                "L06: Deployment"
+            ],
+            "taxonomy_version": "0.1"
+        }
+    },
+    "credit": [
+        {
+            "lang": "eng",
+            "value": "Khoa Lam, AIID"
+        }
+    ],
+    "published_date": "2022-12-23",
+    "last_modified_date": "2022-12-23"
+}

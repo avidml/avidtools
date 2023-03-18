@@ -1,0 +1,61 @@
+{
+    "data_type": "AVID",
+    "data_version": "0.1",
+    "metadata": {
+        "vuln_id": "AVID-2022-V012"
+    },
+    "affects": {
+        "developer": [
+            "Hive Box"
+        ],
+        "deployer": [
+            "Hive Box"
+        ],
+        "artifacts": [
+            {
+                "type": "System",
+                "name": ""
+            }
+        ]
+    },
+    "problemtype": {
+        "classof": "AIID Incident",
+        "description": {
+            "lang": "eng",
+            "value": "Hive Box Facial-Recognition Locks Hacked by Fourth Graders Using Intended Recipient's Facial Photo"
+        }
+    },
+    "references": [
+        {
+            "label": "Incident 223: Hive Box Facial-Recognition Locks Hacked by Fourth Graders Using Intended Recipient's Facial Photo",
+            "url": "https://incidentdatabase.ai/cite/223"
+        }
+    ],
+    "description": {
+        "lang": "eng",
+        "value": "Facial-recognition locks by Hive Box, an express delivery locker company in China, were easily opened by a group of fourth-graders in a science-club demo using only a printed photo of the intended recipient\u2019s face, leaving contents vulnerable to theft."
+    },
+    "reports": [],
+    "impact": {
+        "avid": {
+            "risk_domain": [
+                "Security"
+            ],
+            "sep_view": [
+                "S0403: Adversarial Example"
+            ],
+            "lifecycle_view": [
+                "L06: Deployment"
+            ],
+            "taxonomy_version": "0.1"
+        }
+    },
+    "credit": [
+        {
+            "lang": "eng",
+            "value": "Khoa Lam, AIID"
+        }
+    ],
+    "published_date": "2022-12-23",
+    "last_modified_date": "2022-12-23"
+}

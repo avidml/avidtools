@@ -1,0 +1,57 @@
+{
+    "data_type": "AVID",
+    "data_version": "0.1",
+    "metadata": {
+        "vuln_id": "AVID-2022-V009"
+    },
+    "affects": {
+        "developer": [],
+        "deployer": [],
+        "artifacts": [
+            {
+                "type": "System",
+                "name": ""
+            }
+        ]
+    },
+    "problemtype": {
+        "classof": "AIID Incident",
+        "description": {
+            "lang": "eng",
+            "value": "Deepfake Video of Ukrainian President Yielding to Russia Posted on Ukrainian Websites and Social Media"
+        }
+    },
+    "references": [
+        {
+            "label": "Incident 198: Deepfake Video of Ukrainian President Yielding to Russia Posted on Ukrainian Websites and Social Media",
+            "url": "https://incidentdatabase.ai/cite/198"
+        }
+    ],
+    "description": {
+        "lang": "eng",
+        "value": "A quickly-debunked deepfaked video of the Ukrainian President Volodymyr Zelenskyy was posted on various Ukrainian websites and social media platforms encouraging Ukrainians to surrender to Russian forces during the Russia-Ukraine war."
+    },
+    "reports": [],
+    "impact": {
+        "avid": {
+            "risk_domain": [
+                "Ethics"
+            ],
+            "sep_view": [
+                "E0402: Generative Misinformation"
+            ],
+            "lifecycle_view": [
+                "L06: Deployment"
+            ],
+            "taxonomy_version": "0.1"
+        }
+    },
+    "credit": [
+        {
+            "lang": "eng",
+            "value": "Sean McGregor, Khoa Lam, AIID"
+        }
+    ],
+    "published_date": "2022-12-23",
+    "last_modified_date": "2022-12-23"
+}

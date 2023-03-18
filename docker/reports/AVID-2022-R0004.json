@@ -1,0 +1,101 @@
+{
+    "data_type": "AVID",
+    "data_version": "0.1",
+    "metadata": {
+        "report_id": "AVID-2022-R0004"
+    },
+    "affects": {
+        "developer": [],
+        "deployer": [
+            "HuggingFace"
+        ],
+        "artifact": [
+            {
+                "type": "Model",
+                "name": "xlm-roberta-base"
+            },
+            {
+                "type": "Dataset",
+                "name": "sasha/wino_bias_cloze1"
+            },
+            {
+                "type": "Dataset",
+                "name": "sasha/wino_bias_cloze2"
+            }
+        ]
+    },
+    "problemtype": {
+        "class": "LLM evaluation",
+        "type": "Detection",
+        "description": {
+            "lang": "eng",
+            "value": "Profession bias reinforcing gender stereotypes found in xlm-roberta-base, as measured on the Winobias dataset"
+        }
+    },
+    "metrics": [
+        {
+            "name": "Probability",
+            "features": {
+                "measured": "Probability of predicting biased pronouns",
+                "sensitive": "gender"
+            },
+            "detection": {
+                "class": "Significance test",
+                "name": "One-sample z test for mean"
+            }
+        }
+    ],
+    "references": [
+        {
+            "type": "source",
+            "label": "Gender Bias Evaluation for Masked Language modelling: Winobias",
+            "url": "https://github.com/avidml/evaluating-LLMs/blob/main/notebooks/evaluation_winobias.ipynb"
+        },
+        {
+            "type": "model",
+            "label": "xlm-roberta-base on Hugging Face",
+            "url": "https://huggingface.co/xlm-roberta-base"
+        },
+        {
+            "type": "misc",
+            "label": "WinoBias",
+            "url": "https://uclanlp.github.io/corefBias/overview"
+        }
+    ],
+    "description": {
+        "lang": "eng",
+        "value": "Filling in pronouns in sentences tagged with professions using xlm-roberta-base were found to be significantly biased on the Winobias dataset."
+    },
+    "impact": {
+        "avid": {
+            "vuln_id": "AVID-2022-V002",
+            "risk_domain": [
+                "Ethics"
+            ],
+            "sep_view": [
+                {
+                    "id": "E0101",
+                    "name": "Group Fairness"
+                }
+            ],
+            "lifecycle_view": [
+                {
+                    "id": "L05",
+                    "stage": "Evaluation"
+                }
+            ],
+            "taxonomy_version": "0.1"
+        }
+    },
+    "credit": [
+        {
+            "lang": "eng",
+            "value": "Harry Saini, AVID"
+        },
+        {
+            "lang": "eng",
+            "value": "Sasha Luccioni, Hugging Face"
+        }
+    ],
+    "reported_date": "2022-11-09"
+}

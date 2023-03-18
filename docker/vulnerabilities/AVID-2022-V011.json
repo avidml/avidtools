@@ -1,0 +1,62 @@
+{
+    "data_type": "AVID",
+    "data_version": "0.1",
+    "metadata": {
+        "vuln_id": "AVID-2022-V011"
+    },
+    "affects": {
+        "developer": [
+            "PredPol"
+        ],
+        "deployer": [
+            "Chicago Police Department"
+        ],
+        "artifacts": [
+            {
+                "type": "System",
+                "name": ""
+            }
+        ]
+    },
+    "problemtype": {
+        "classof": "AIID Incident",
+        "description": {
+            "lang": "eng",
+            "value": "Predictive Policing Biases of PredPol"
+        }
+    },
+    "references": [
+        {
+            "label": "Predictive Policing Biases of PredPol",
+            "url": "https://incidentdatabase.ai/cite/54"
+        }
+    ],
+    "description": {
+        "lang": "eng",
+        "value": "Predictive policing algorithms meant to aid law enforcement by predicting future crime show signs of biased output."
+    },
+    "reports": [],
+    "impact": {
+        "avid": {
+            "risk_domain": [
+                "Ethics"
+            ],
+            "sep_view": [
+                "E0101: Group fairness"
+            ],
+            "lifecycle_view": [
+                "L06: Deployment"
+            ],
+
+            "taxonomy_version": "0.1"
+        }
+    },
+    "credit": [
+        {
+            "lang": "eng",
+            "value": "Sean McGregor, AIID"
+        }
+    ],
+    "published_date": "2022-12-23",
+    "last_modified_date": "2022-12-23"
+}
