@@ -42,6 +42,9 @@ class AvidTaxonomy(BaseModel):
     sep_view: List[SepEnum]
     lifecycle_view: List[LifecycleEnum]
     taxonomy_version: str
+
+    class Config: # vuln_id is excluded if None
+        fields = {'vuln_id': {'exclude': True}}
         
 class Impact(BaseModel):
     avid: AvidTaxonomy
