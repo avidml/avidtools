@@ -28,13 +28,16 @@ class Problemtype(BaseModel):
         
 class Metric(BaseModel):
     name: str
-    features: Dict
     detection_method: Detection
+    results: Dict
 
 class Reference(BaseModel):
     type: Optional[str]
     label: str
     url: str # AnyUrl is a better fit, but keeping this because submissions are not standard yet
+
+    class Config: # type is excluded if None
+        fields = {'type': {'exclude': True}}
 
 class AvidTaxonomy(BaseModel):
     vuln_id: Optional[str]
