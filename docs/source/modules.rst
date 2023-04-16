@@ -1,11 +1,8 @@
-sift
-====
+avidtools
+=========
 
-test
+.. toctree::
+   :maxdepth: 2
 
-# Modules
-
-.. automodule:: avidtools.datamodels.report
-   :members:
-   :show-inheritance:
-   :member-order: bysource
+   components
+   report
