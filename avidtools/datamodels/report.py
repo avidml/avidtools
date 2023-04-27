@@ -1,5 +1,5 @@
 """
-Class definitions for AVID reports.
+Class definitions for AVID report.
 
 """
 from pydantic import BaseModel

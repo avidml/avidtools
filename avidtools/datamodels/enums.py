@@ -1,11 +1,16 @@
+"""
+Enumerations used in AVID report and vulnerability datamodels.
+"""
 from enum import Enum
 
 class ArtifactTypeEnum(str, Enum):
+    """Whether the artifact is a dataset, model, or system."""
     dataset = 'Dataset'
     model = 'Model'
     system = 'System'
     
 class SepEnum(str, Enum):
+    """All (sub)categories of the SEP view of the AVID taxonomy."""
     S0100 = 'S0100: Software Vulnerability'
     S0200 = 'S0200: Supply Chain Compromise'
     S0201 = 'S0201: Model Compromise'
@@ -56,6 +61,7 @@ class SepEnum(str, Enum):
     P0404 = 'P0404: Environmental safety'
         
 class LifecycleEnum(str, Enum):
+    """All (sub)categories of the lifecycle view of the AVID taxonomy."""
     L01 = 'L01: Business Understanding'
     L02 = 'L02: Data Understanding'
     L03 = 'L03: Data Preparation'
@@ -64,6 +70,7 @@ class LifecycleEnum(str, Enum):
     L06 = 'L06: Deployment'
 
 class ClassEnum(str, Enum):
+    """All report/vulnerability classes."""
     aiid = 'AIID Incident'
     atlas = 'ATLAS Case Study'
     cve = 'CVE Entry'
@@ -71,11 +78,13 @@ class ClassEnum(str, Enum):
     na = 'Undefined'
         
 class TypeEnum(str, Enum):
+    """All report/vulnerability types."""
     issue = 'Issue'
     advisory = 'Advisory'
     measurement = 'Measurement'
     detection = 'Detection'
     
 class MethodEnum(str, Enum):
+    """The values a detection method can take."""
     test = 'Significance Test'
     thres = 'Static Threshold'

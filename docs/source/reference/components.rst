@@ -1,5 +1,8 @@
-:mod:`avidtools.datamodels`.components
+Components
 ======================================
+
+:mod:`avidtools.datamodels`.components
+---------------------------------------
 
 .. automodule:: avidtools.datamodels.components
    :members:

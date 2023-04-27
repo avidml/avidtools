@@ -7,11 +7,35 @@ from avidtools.datamodels.components import *
 ATLAS_HOME = 'https://raw.githubusercontent.com/mitre-atlas/atlas-data/main/data/case-studies/'
 
 def import_case_study(case_study_id):
+    """Import a case study from the MITRE ATLAS website and return an yaml object.
+        
+        Parameters
+        ----------
+        case_study_id : str
+            Identifier of the case studies to be imported. Has the format AML.CSXXXX
+
+        Returns
+        --------
+        case_study : dict
+            Dictionary containing the imported case study.
+    """
     req = requests.get(ATLAS_HOME+case_study_id+'.yaml')
     case_study = yaml.safe_load(req.content)
     return case_study
     
 def convert_case_study(case_study):
+    """Convert a case study in the ATLAS schema into an AVID report object.
+        
+        Parameters
+        ----------
+        case_study : dict
+            Dictionary containing the imported case study.
+        
+        Returns
+        --------
+        report : Report
+            an AVID report object containing information in the case study.
+    """
     report = Report()
     
     report.affects = Affects(
