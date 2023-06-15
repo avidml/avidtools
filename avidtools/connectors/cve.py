@@ -4,8 +4,6 @@ from datetime import datetime
 from avidtools.datamodels.vulnerability import Vulnerability
 from avidtools.datamodels.components import *
 
-ATLAS_HOME = 'https://raw.githubusercontent.com/mitre-atlas/atlas-data/main/data/case-studies/'
-
 def import_cve(cve_id):
     """Import a CVE from the NVD API and return a JSON dump object.
         
@@ -33,7 +31,7 @@ def convert_cve(cve):
         Returns
         --------
         vuln : Vulnerability
-            an AVID vulnerability object containing information in the case study.
+            an AVID vulnerability object containing information in the CVE.
     """
     vuln = Vulnerability()
     
