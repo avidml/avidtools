@@ -1,6 +1,8 @@
 # avidtools
 Developer tools for AVID.
 
+[API docs](https://avidml.org/avidtools/)
+
 ## Components
 
 Currently there are two components:
