@@ -11,6 +11,18 @@ class LangValue(BaseModel):
     lang: str
     value: str
 
+class Metadata(BaseModel):
+    """Generic metadata class for a report/vuln object"""
+    object_type: str
+    object_id: str
+
+class Related(BaseModel):
+    """Reports/vulns related to this object, e.g. same detections used, vuln under which a report is categorized, semantic similarity"""
+    object_type: str
+    object_id: str
+    object_description: str
+
+
 class Artifact(BaseModel):
     """Type and name of an affected artifact."""
     type: ArtifactTypeEnum
@@ -57,7 +69,6 @@ class Reference(BaseModel):
 class Taxonomy(BaseModel): # NOTE: rename to store generic taxonomy object
 # class AvidTaxonomy(BaseModel):
     """AVID taxonomy mappings of a report/vulnerability."""
-    vuln_id: Optional[str] # TODO: should move to a new field `Related` that tracks related objects, ref. https://gist.github.com/zoezoezoe/8e499b62d50b155eb721427be41f5fef
     namespace: str
     predicate: str
     value: str

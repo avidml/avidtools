@@ -1,64 +1,49 @@
 """
-Class definitions for AVID vulnerability.
+Class definitions for AVID report.
 
 """
 from pydantic import BaseModel
 from typing import List
 from datetime import date
 
-from .components import Affects, AvidTaxonomy, Problemtype, Reference, LangValue, Impact
-from .enums import TypeEnum
-from .report import Report
+from .components import Metadata, Related, Affects, Problemtype, Metric, Reference, LangValue, Impact
 
-class VulnMetadata(BaseModel):
-    """Metadata class for a vulnerability."""
-    vuln_id: str
-
-class ReportSummary(BaseModel):
-    """Summary of a report connected to a vuln."""
-    report_id: str
-    type: TypeEnum
-    name: str
-
-class Vulnerability(BaseModel):
-    """Top-level class to store an AVID vulnerability."""
+class AvidObject(BaseModel):
+    """Top-level class to store an AVID report."""
 
     data_type: str = 'AVID'
     """Namespace for the report. Set to AVID by default, change this only if you're adopting these datamodels to stand up your own vulnerability database."""
 
     data_version: str = None
     """Latest version of the data."""
+    
+    metadata: Metadata = None
+    """Metadata for the report/vuln."""
 
-    metadata: VulnMetadata = None
-    """Metadata for the vuln."""
-
+    related_objects: List[Related] = None
+    """Related objects"""
+    
     affects: Affects = None
-    """Information on Artifact(s) affected by this report."""
+    """Information on Artifact(s) affected."""
     
     problemtype: Problemtype = None
-    """Description of the problem a report is concerned with."""
+    """Description of the problem this object is concerned with."""
     
     references: List[Reference] = None
     """References and their details."""
-
+    
     description: LangValue = None
     """High-level description."""
-
-    reports: List[ReportSummary] = None
-    """Brief summary of all reports connected to a vuln."""
-
+    
     impact: Impact = None
     """Impact information, e.g. different taxonomy mappings, harm and severity scores."""
-
+    
     credit: List[LangValue] = None
-    """People credited for this vuln."""
-
-    published_date: date = None
-    """Date published."""
-
-    last_modified_date: date = None
-    """Date last modified."""
-        
+    """People credited for this report/vuln."""
+    
+    reported_date: date = None
+    """Date reported."""
+    
     def save(self, location):
         """Save a report as a json file.
         
@@ -69,7 +54,18 @@ class Vulnerability(BaseModel):
         """
         with open(location, "w") as outfile:
             outfile.write(self.json(indent=4))
+
+class Report(AvidObject):
+    metadata: Metadata = Metadata(object_id=None, object_type="Report")
+    """Specify metadata type as Report"""
     
+    metrics: List[Metric] = None
+    """Quantitative results pertaining to the issues raised here."""
+
+class Vulnerability(AvidObject):
+    metadata: Metadata = Metadata(object_id=None, object_type="Vulnerability")
+    """Specify metadata type as Vuln"""
+
     def ingest(self, report: Report):
         self.data_version = report.data_version
         self.affects = report.affects
@@ -81,11 +77,10 @@ class Vulnerability(BaseModel):
         self.published_date = date.today()
         self.last_modified_date = date.today()
 
-        if self.impact is not None:
-            if self.impact.avid is not None: # delete vuln_id field from report
-                self.impact.avid = AvidTaxonomy(
-                    risk_domain = self.impact.avid.risk_domain,
-                    sep_view = self.impact.avid.sep_view,
-                    lifecycle_view = self.impact.avid.lifecycle_view,
-                    taxonomy_version = self.impact.avid.taxonomy_version
-                )
+        self.related_objects = [
+            Related(
+                object_id = report.metadata.object_id,
+                object_type = "Report",
+                object_name = report.description.value
+            )
+        ]

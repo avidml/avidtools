@@ -8,7 +8,7 @@ setup(
     author_email='info@avidml.org',
     packages=['avidtools'],
     install_requires=[
-        'pydantic',
+        'pydantic==1.10.4',
 #         'enum',
         'typing',
         'typing_extensions',
