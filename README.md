@@ -12,7 +12,12 @@ Currently there are two components:
 
 ## Installation
 
-Run the following from this directory:
+Run the following to install the latest stable version on PyPI:
+```
+pip install avidtools
+```
+
+From inside this directory, run the following to install the latest development version:
 ```
 pip install -e .
 ```
