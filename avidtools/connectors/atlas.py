@@ -1,8 +1,8 @@
 import requests
 import yaml
 
-from avidtools.datamodels.report import Report
-from avidtools.datamodels.components import *
+from ..datamodels.report import Report
+from ..datamodels.components import *
 
 ATLAS_HOME = 'https://raw.githubusercontent.com/mitre-atlas/atlas-data/main/data/case-studies/'
 
