@@ -1,8 +1,8 @@
 import nvdlib
 from datetime import datetime
 
-from avidtools.datamodels.vulnerability import Vulnerability
-from avidtools.datamodels.components import *
+from ..datamodels.vulnerability import Vulnerability
+from ..datamodels.components import *
 
 def import_cve(cve_id):
     """Import a CVE from the NVD API and return a JSON dump object.
