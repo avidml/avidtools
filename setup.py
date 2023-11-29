@@ -9,7 +9,7 @@ setup(
     packages=find_packages(exclude=['.']),
     install_requires=[
         'pydantic',
-        'typing',
+        'typing;python_version<"3.5"',
         'typing_extensions',
         'datetime',
         'nvdlib'
