@@ -57,4 +57,4 @@ class Report(BaseModel):
             output *.json filename including location.
         """
         with open(location, "w") as outfile:
-            outfile.write(self.json(indent=4))
+            outfile.write(self.json())
