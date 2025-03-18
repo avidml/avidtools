@@ -5,6 +5,29 @@ from ..datamodels.components import *
 
 from inspect_ai.log import read_eval_log, EvalLog
 
+
+human_readable_name = {
+    "openai": "OpenAI",
+    "hf": "HuggingFace",
+    "anthropic": "Anthropic",
+    "google": "Google",
+    "mistral": "Mistral",
+    "X AI": "Grok",
+    "meta": "Meta",
+    "cohere": "Cohere",
+    "perplexity": "Perplexity AI",
+    "stability": "Stability AI",
+    "nvidia": "NVIDIA",
+    "ibm": "IBM Watson",
+    "mosaic": "MosaicML",
+    "databricks": "Databricks",
+    "cerebras": "Cerebras Systems",
+    "alibaba": "Alibaba Cloud",
+    "baidu": "Baidu AI",
+    "tencent": "Tencent AI",
+}
+
+
 def import_eval_log(file_path: str) -> EvalLog:
     """
     Import an Inspect evaluation log file and return an evaluation log object.
@@ -40,14 +63,17 @@ def convert_eval_log(file_path: str) -> List[Report]:
 
     for sample in eval_log.samples:
         report = Report()
-
+        developer_name = human_readable_name[eval_log.eval.model.split("/", 1)[0]]
+        task = eval_log.eval.task.rsplit("/", 1)[-1]
+        model_name = eval_log.eval.model.rsplit("/", 1)[-1]
+        
         report.affects = Affects(
-            developer=[],
+            developer=[developer_name],
             deployer=[eval_log.eval.model],
             artifacts=[
                 Artifact(
                     type=ArtifactTypeEnum.model,
-                    name=eval_log.eval.model
+                    name=model_name
                 )
             ]
         )
@@ -57,22 +83,26 @@ def convert_eval_log(file_path: str) -> List[Report]:
             type=TypeEnum.measurement,
             description=LangValue(
                 lang='eng',
-                value=eval_log.eval.task
+                value=f"Evaluation of the LLM {model_name} on the {task} benchmark using Inspect Evals",
             )
         )
 
         report.references = [
             Reference(
                 type='source',
-                label='Inspect Evaluation Log',
-                url=file_path
+                label=f"Inspect Evaluation Log for dataset: {eval_log.eval.dataset.name}",
+                url=eval_log.eval.dataset.location
             )
         ]
-
+        
+        metrics = ', '.join([metric.name.rsplit('/', 1)[-1] for scorer in eval_log.eval.scorers for metric in scorer.metrics])
+        scorer_desc = '|'.join([f"scorer: {scorer.name}, metrics: {metrics}" for scorer in eval_log.eval.scorers])
         report.description = LangValue(
             lang='eng',
-            value=f"Sample input: {sample.input}\n"
+            value=f"Evaluation of the LLM {model_name} on the {task} benchmark using Inspect Evals"
+                  f"Sample input: {sample.input}\n"
                   f"Model output: {sample.output}\n"
+                  f"Scorer: {scorer_desc}\n"
                   f"Score: {sample.score}"
         )
 
