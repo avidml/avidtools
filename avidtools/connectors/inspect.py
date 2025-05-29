@@ -68,25 +68,15 @@ def convert_eval_log(file_path: str) -> List[Report]:
         developer_name = human_readable_name[eval_log.eval.model.split("/", 1)[0]]
         task = eval_log.eval.task.rsplit("/", 1)[-1]
         model_name = eval_log.eval.model.rsplit("/", 1)[-1]
-        report.affects = {
-            "developer":[developer_name],
-            "deployer":[eval_log.eval.model],
-            "artifacts":[
-                {
-                    "type": ArtifactTypeEnum.model.value,
-                    "name": model_name
-                }
-            ]
-        }
+        report.affects = Affect(developer=[developer_name],
+                                deployer=[eval_log.eval.model],
+                                artifact=Artifact(type=ArtifactTypeEnum.model.value, 
+                                                  name=model_name))
         
-        report.problemtype = {
-            "classof": ClassEnum.llm.value,
-            "type": TypeEnum.measurement.value,
-            "description": {
-                "lang": 'eng',
-                "value": f"Evaluation of the LLM {model_name} on the {task} benchmark using Inspect Evals",
-            }
-        }
+        report.problemtype = ProblemType(classof=ClassEnum.llm.value,
+                                        type=TypeEnum.measurement.value,
+                                        description={"lang": 'eng',
+                                                    "value": f"Evaluation of the LLM {model_name} on the {task} benchmark using Inspect Evals"})
 
         report.references = [
             Reference(
