@@ -1,0 +1,25 @@
+[project]
+name = "avidtools"
+version = "0.1.3"
+description = "Developer tools for AVID"
+authors = [
+    {name = "Subho Majumdar", email = "subho@avidml.org"},
+    {name = "Harsh Raj", email = "harsh@avidml.org"}
+]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.12"
+pydantic = "^2.11.5"
+typing-extensions = "^4.13.2"
+datetime = "^5.5"
+nvdlib = "^0.8.1"
+
+[tool.poetry.group.dev.dependencies]
+mypy = "^1.16.0"
+ruff = "^0.11.12"
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
+
