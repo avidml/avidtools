@@ -25,6 +25,8 @@ human_readable_name = {
     "alibaba": "Alibaba Cloud",
     "baidu": "Baidu AI",
     "tencent": "Tencent AI",
+    "together": "Together AI",
+    "deepseek": "Deepseek AI",
 }
 
 
@@ -66,26 +68,15 @@ def convert_eval_log(file_path: str) -> List[Report]:
         developer_name = human_readable_name[eval_log.eval.model.split("/", 1)[0]]
         task = eval_log.eval.task.rsplit("/", 1)[-1]
         model_name = eval_log.eval.model.rsplit("/", 1)[-1]
+        report.affects = Affect(developer=[developer_name],
+                                deployer=[eval_log.eval.model],
+                                artifact=Artifact(type=ArtifactTypeEnum.model.value, 
+                                                  name=model_name))
         
-        report.affects = Affects(
-            developer=[developer_name],
-            deployer=[eval_log.eval.model],
-            artifacts=[
-                Artifact(
-                    type=ArtifactTypeEnum.model,
-                    name=model_name
-                )
-            ]
-        )
-
-        report.problemtype = Problemtype(
-            classof=ClassEnum.llm,
-            type=TypeEnum.measurement,
-            description=LangValue(
-                lang='eng',
-                value=f"Evaluation of the LLM {model_name} on the {task} benchmark using Inspect Evals",
-            )
-        )
+        report.problemtype = ProblemType(classof=ClassEnum.llm.value,
+                                        type=TypeEnum.measurement.value,
+                                        description={"lang": 'eng',
+                                                    "value": f"Evaluation of the LLM {model_name} on the {task} benchmark using Inspect Evals"})
 
         report.references = [
             Reference(
@@ -97,14 +88,19 @@ def convert_eval_log(file_path: str) -> List[Report]:
         
         metrics = ', '.join([metric.name.rsplit('/', 1)[-1] for scorer in eval_log.eval.scorers for metric in scorer.metrics])
         scorer_desc = '|'.join([f"scorer: {scorer.name}, metrics: {metrics}" for scorer in eval_log.eval.scorers])
-        report.description = LangValue(
-            lang='eng',
-            value=f"Evaluation of the LLM {model_name} on the {task} benchmark using Inspect Evals"
-                  f"Sample input: {sample.input}\n"
-                  f"Model output: {sample.output}\n"
-                  f"Scorer: {scorer_desc}\n"
+        report.metrics = []
+        for sc in eval_log.results.scores:
+            for k, v in sc.metrics.items():
+                report.metrics.append({"scorer": sc.name, "metrics": k, "value": v.value})
+        
+        report.description = {
+            "lang": 'eng',
+            "value": f"Evaluation of the LLM {model_name} on the {task} benchmark using Inspect Evals"
+                  f"\n\nSample input: {sample.input}\n\n"
+                  f"Model output: {sample.output}\n\n"
+                  f"Scorer: {scorer_desc}\n\n"
                   f"Score: {sample.score}"
-        )
+        }
 
         reports.append(report)
 
