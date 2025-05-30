@@ -2,7 +2,7 @@ from setuptools import find_packages, setup
   
 setup(
     name='avidtools',
-    version='0.1.2',
+    version='0.1.3',
     description='Developer tools for AVID',
     author='Subho Majumdar',
     author_email='info@avidml.org',
