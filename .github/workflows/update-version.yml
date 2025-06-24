@@ -1,0 +1,144 @@
+name: Update Version
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'New version (e.g., 0.2.1)'
+        required: true
+        type: string
+      update_method:
+        description: 'How to update the version'
+        required: true
+        type: choice
+        options:
+          - 'create-pr'
+          - 'direct-commit-and-release'
+        default: 'create-pr'
+
+jobs:
+  update-version:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.12'
+
+      - name: Install Poetry
+        uses: snok/install-poetry@v1
+        with:
+          version: latest
+          virtualenvs-create: true
+          virtualenvs-in-project: true
+
+      - name: Validate version format
+        run: |
+          VERSION="${{ github.event.inputs.version }}"
+          if ! echo "$VERSION" | grep -E '^[0-9]+\.[0-9]+\.[0-9]+$'; then
+            echo "❌ Invalid version format: $VERSION"
+            echo "Version must follow semantic versioning (e.g., 1.2.3)"
+            exit 1
+          fi
+          echo "✅ Version format is valid: $VERSION"
+
+      - name: Configure git
+        run: |
+          git config --global user.name 'github-actions[bot]'
+          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+
+      - name: Update version via PR
+        if: github.event.inputs.update_method == 'create-pr'
+        run: |
+          CURRENT_VERSION=$(poetry version -s)
+          NEW_VERSION="${{ github.event.inputs.version }}"
+          
+          echo "Current version: $CURRENT_VERSION"
+          echo "New version: $NEW_VERSION"
+          
+          # Update version
+          poetry version "$NEW_VERSION"
+          
+          # Create branch
+          BRANCH_NAME="update-version-to-$NEW_VERSION"
+          git checkout -b "$BRANCH_NAME"
+          
+          # Commit changes
+          git add pyproject.toml
+          git commit -m "🔖 Update version to $NEW_VERSION
+          
+          Manual version update from $CURRENT_VERSION to $NEW_VERSION"
+          
+          # Push branch
+          git push origin "$BRANCH_NAME"
+          
+          # Create PR
+          gh pr create \
+            --title "🔖 Update version to $NEW_VERSION" \
+            --body "## Version Update
+          
+          This PR updates the version in \`pyproject.toml\`.
+          
+          **Changes:**
+          - Update version from \`$CURRENT_VERSION\` to \`$NEW_VERSION\`
+          
+          **Triggered by:** Manual workflow dispatch (PR method)
+          
+          **Next steps:** Merge this PR manually when ready." \
+            --head "$BRANCH_NAME" \
+            --base main \
+            --label "version-update"
+          
+          echo "✅ PR created! Please review and merge manually."
+        env:
+          GH_TOKEN: ${{ github.token }}
+
+      - name: Update version and create release directly
+        if: github.event.inputs.update_method == 'direct-commit-and-release'
+        run: |
+          CURRENT_VERSION=$(poetry version -s)
+          NEW_VERSION="${{ github.event.inputs.version }}"
+          
+          echo "Current version: $CURRENT_VERSION"
+          echo "New version: $NEW_VERSION"
+          
+          # Update version
+          poetry version "$NEW_VERSION"
+          
+          # Commit directly to main
+          git add pyproject.toml
+          git commit -m "🔖 Update version to $NEW_VERSION
+
+          Automatic version update from $CURRENT_VERSION to $NEW_VERSION
+          
+          This commit was created automatically by the version update workflow
+          and will trigger a GitHub release and PyPI publishing."
+          
+          # Push to main
+          git push origin main
+          
+          # Create GitHub release
+          echo "🚀 Creating GitHub release for version $NEW_VERSION..."
+          
+          gh release create "v$NEW_VERSION" \
+            --title "Release v$NEW_VERSION" \
+            --notes "## What's Changed
+          
+          - Updated version to $NEW_VERSION
+          
+          **Automatically generated release from version update workflow.**
+          
+          This release was created automatically and will trigger PyPI publishing." \
+            --latest
+          
+          echo "✅ Version updated and release v$NEW_VERSION created successfully!"
+          echo "🔄 This will trigger the PyPI publishing workflow automatically."
+        env:
+          GH_TOKEN: ${{ github.token }}

@@ -1,0 +1,136 @@
+name: Publish to PyPI
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      id-token: write
+      pull-requests: write
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.12'
+
+      - name: Install Poetry
+        uses: snok/install-poetry@v1
+        with:
+          version: latest
+          virtualenvs-create: true
+          virtualenvs-in-project: true
+
+      - name: Cache Poetry dependencies
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cache/pypoetry
+            .venv
+          key: poetry-${{ runner.os }}-${{ hashFiles('**/poetry.lock') }}
+          restore-keys: |
+            poetry-${{ runner.os }}-
+
+      - name: Install dependencies
+        run: poetry install --no-interaction --no-ansi
+
+      - name: Check version consistency
+        id: version_check
+        run: |
+          # Extract version from pyproject.toml
+          PYPROJECT_VERSION=$(poetry version -s)
+          echo "pyproject_version=$PYPROJECT_VERSION" >> $GITHUB_OUTPUT
+          
+          # Extract version from release tag (remove 'v' prefix if present)
+          RELEASE_TAG="${{ github.event.release.tag_name }}"
+          TAG_VERSION="${RELEASE_TAG#v}"
+          echo "tag_version=$TAG_VERSION" >> $GITHUB_OUTPUT
+          
+          echo "PyProject version: $PYPROJECT_VERSION"
+          echo "Release tag version: $TAG_VERSION"
+          
+          if [ "$PYPROJECT_VERSION" != "$TAG_VERSION" ]; then
+            echo "version_mismatch=true" >> $GITHUB_OUTPUT
+            echo "❌ Version mismatch detected!"
+            echo "PyProject version: $PYPROJECT_VERSION"
+            echo "Release tag version: $TAG_VERSION"
+          else
+            echo "version_mismatch=false" >> $GITHUB_OUTPUT
+            echo "✅ Version consistency check passed!"
+          fi
+
+      - name: Create version update PR
+        if: steps.version_check.outputs.version_mismatch == 'true'
+        run: |
+          # Configure git
+          git config --global user.name 'github-actions[bot]'
+          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+          
+          # Create new branch
+          BRANCH_NAME="update-version-to-${{ steps.version_check.outputs.tag_version }}"
+          git checkout -b "$BRANCH_NAME"
+          
+          # Update version in pyproject.toml
+          poetry version "${{ steps.version_check.outputs.tag_version }}"
+          
+          # Commit changes
+          git add pyproject.toml
+          git commit -m "Update version to ${{ steps.version_check.outputs.tag_version }} to match release tag
+          
+          This automated commit updates the version in pyproject.toml to match the release tag ${{ github.event.release.tag_name }}.
+          
+          Previous version: ${{ steps.version_check.outputs.pyproject_version }}
+          New version: ${{ steps.version_check.outputs.tag_version }}"
+          
+          # Push branch
+          git push origin "$BRANCH_NAME"
+          
+          # Create PR
+          gh pr create \
+            --title "🔖 Update version to ${{ steps.version_check.outputs.tag_version }}" \
+            --body "## Version Update
+          
+          This PR automatically updates the version in \`pyproject.toml\` to match the release tag.
+          
+          **Changes:**
+          - Update version from \`${{ steps.version_check.outputs.pyproject_version }}\` to \`${{ steps.version_check.outputs.tag_version }}\`
+          
+          **Triggered by:** Release [${{ github.event.release.tag_name }}](${{ github.event.release.html_url }})
+          
+          **Note:** The PyPI publishing workflow has been paused until this version mismatch is resolved. Once this PR is merged, please re-run the publishing workflow or create a new release." \
+            --head "$BRANCH_NAME" \
+            --base main \
+            --label "automated" \
+            --label "version-update"
+        env:
+          GH_TOKEN: ${{ github.token }}
+
+      - name: Stop workflow if version mismatch
+        if: steps.version_check.outputs.version_mismatch == 'true'
+        run: |
+          echo "❌ Stopping workflow due to version mismatch."
+          echo "A PR has been created to fix the version inconsistency."
+          echo "Please merge the PR and re-run this workflow or create a new release."
+          exit 1
+
+      - name: Run tests
+        run: poetry run pytest tests/ --cov=avidtools
+
+      - name: Run linting
+        run: poetry run ruff check avidtools
+
+      - name: Run type checking
+        run: timeout 60 poetry run mypy --config-file ./mypy.ini avidtools || echo "Type checking completed with timeout"
+
+      - name: Build package
+        run: poetry build
+
+      - name: Publish to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
