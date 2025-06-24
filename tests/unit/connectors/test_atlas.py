@@ -26,8 +26,8 @@ class TestAtlasConnector:
         
         # Mock the HTTP response
         url = (
-            "https://raw.githubusercontent.com/mitre-atlas/atlas-data/main/"
-            f"data/case-studies/{case_study_id}.yaml"
+            "https://raw.githubusercontent.com/mitre-atlas/atlas-data/main"
+            f"/data/case-studies/{case_study_id}.yaml"
         )
         responses.add(
             responses.GET,
@@ -47,8 +47,8 @@ class TestAtlasConnector:
         
         # Mock HTTP error response
         url = (
-            "https://raw.githubusercontent.com/mitre-atlas/atlas-data/main/"
-            f"data/case-studies/{case_study_id}.yaml"
+            "https://raw.githubusercontent.com/mitre-atlas/atlas-data/main"
+            f"/data/case-studies/{case_study_id}.yaml"
         )
         responses.add(
             responses.GET,
@@ -160,3 +160,44 @@ class TestAtlasConnector:
         
         assert report.references is not None
         assert len(report.references) == 1  # Only the main reference
+
+    def test_convert_case_study_with_procedure(self, sample_atlas_case_study):
+        """Test conversion with procedure information."""
+        # Add procedure data to the sample case study
+        case_study_with_procedure = sample_atlas_case_study.copy()
+        case_study_with_procedure["procedure"] = [
+            {
+                "tactic": "AML.TA0002",
+                "technique": "AML.T0000",
+                "description": "Reconnaissance step"
+            },
+            {
+                "tactic": "AML.TA0003",
+                "technique": "AML.T0002",
+                "description": "Resource development step"
+            }
+        ]
+        
+        report = convert_case_study(case_study_with_procedure)
+        
+        # Check that impact was created with atlas procedures
+        assert report.impact is not None
+        assert report.impact.atlas is not None
+        assert len(report.impact.atlas) == 2
+        
+        # Check first procedure step
+        first_step = report.impact.atlas[0]
+        assert first_step.tactic == "AML.TA0002"
+        assert first_step.technique == "AML.T0000"
+        assert first_step.description == "Reconnaissance step"
+        
+        # Check second procedure step
+        second_step = report.impact.atlas[1]
+        assert second_step.tactic == "AML.TA0003"
+        assert second_step.technique == "AML.T0002"
+        assert second_step.description == "Resource development step"
+        
+        # Check AVID taxonomy was created
+        assert report.impact.avid is not None
+        assert "Security" in report.impact.avid.risk_domain
+        assert report.impact.avid.taxonomy_version == "0.2"

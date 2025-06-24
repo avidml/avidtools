@@ -73,6 +73,21 @@ class Reference(BaseModel):
         fields = {"type": {"exclude": True}}
 
 
+class AtlasTaxonomy(BaseModel):
+    """ATLAS taxonomy mappings representing attack procedure steps."""
+
+    tactic: Optional[str] = None
+    technique: Optional[str] = None
+    description: Optional[str] = None
+
+    class Config:  # Fields are excluded if None
+        fields = {
+            "tactic": {"exclude": True},
+            "technique": {"exclude": True},
+            "description": {"exclude": True}
+        }
+
+
 class AvidTaxonomy(BaseModel):
     """AVID taxonomy mappings of a report/vulnerability."""
 
@@ -93,3 +108,7 @@ class Impact(BaseModel):
     """
 
     avid: AvidTaxonomy
+    atlas: Optional[List[AtlasTaxonomy]] = None
+
+    class Config:  # atlas is excluded if None
+        fields = {"atlas": {"exclude": True}}
