@@ -31,7 +31,6 @@ Documentation = "https://github.com/avidml/avidtools"
 python = "^3.12"
 pydantic = "^2.11.5"
 typing-extensions = "^4.13.2"
-datetime = "^5.5"
 nvdlib = "^0.8.1"
 
 [tool.poetry.group.dev.dependencies]
