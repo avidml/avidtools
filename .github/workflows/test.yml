@@ -1,0 +1,48 @@
+name: Run Tests
+
+on:
+  pull_request:
+    branches:
+      - main 
+
+jobs:
+  IntegrationTests:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.12'  
+
+      - name: Install Poetry
+        run: |
+          curl -sSL https://install.python-poetry.org | python3 -
+        
+        # Cache poetry dependencies so that tests are faster if the lock file hasn't changed
+      - name: Cache Poetry dependencies
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cache/pypoetry
+            ~/.virtualenvs
+          key: poetry-${{ runner.os }}-${{ hashFiles('**/poetry.lock') }}
+          restore-keys: |
+            poetry-${{ runner.os }}-
+
+      - name: Install dependencies with Poetry
+        run: poetry install --no-interaction --no-ansi
+
+      - name: Mypy Type Checking
+        run: make typecheck
+
+      - name: Ruff Linting and Formatting
+        run: make linting
+
+      - name: Run tests
+        run: make test
