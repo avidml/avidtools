@@ -44,5 +44,5 @@ jobs:
       - name: Ruff Linting and Formatting
         run: make linting
 
-      # - name: Run tests
-      #   run: make test
+      - name: Run tests
+        run: make test

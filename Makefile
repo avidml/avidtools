@@ -36,12 +36,12 @@ test:
 
 typecheck:
 	@echo "Running mypy..."
-	poetry run mypy --config-file ./mypy.ini vijil
+	poetry run mypy --config-file ./mypy.ini avidtools
 	@echo "mypy complete."
 
 linting:
 	@echo "Running ruff check..."
-	poetry run ruff check vijil
+	poetry run ruff check avidtools
 	@echo "ruff check complete"
 
 # Run linter

@@ -1,38 +1,44 @@
-from typing import List
+from typing import List, Any
 
 from ..datamodels.report import Report
-from ..datamodels.components import *
+from ..datamodels.components import (
+    Affects,
+    Artifact,
+    ArtifactTypeEnum,
+    Detection,
+    LangValue,
+    Metric,
+    Problemtype,
+    Reference,
+)
+from ..datamodels.enums import ClassEnum, MethodEnum, TypeEnum
 
-from inspect_ai.log import read_eval_log, EvalLog
+try:
+    from inspect_ai.log import read_eval_log, EvalLog
+except ImportError:
+    # Handle case where inspect_ai is not installed
+    def read_eval_log(file_path):
+        raise ImportError(
+            "inspect_ai package is required for this functionality"
+        )
+
+    # Create a dummy EvalLog class for type hinting
+    EvalLog = Any
 
 
 human_readable_name = {
     "openai": "OpenAI",
-    "hf": "HuggingFace",
     "anthropic": "Anthropic",
     "google": "Google",
-    "mistral": "Mistral",
-    "X AI": "Grok",
-    "meta": "Meta",
+    "huggingface": "Hugging Face",
+    "meta-llama": "Meta",
+    "mistralai": "Mistral AI",
     "cohere": "Cohere",
-    "perplexity": "Perplexity AI",
-    "stability": "Stability AI",
-    "nvidia": "NVIDIA",
-    "ibm": "IBM Watson",
-    "mosaic": "MosaicML",
-    "databricks": "Databricks",
-    "cerebras": "Cerebras Systems",
-    "alibaba": "Alibaba Cloud",
-    "baidu": "Baidu AI",
-    "tencent": "Tencent AI",
-    "together": "Together AI",
-    "deepseek": "Deepseek AI",
 }
 
 
-def import_eval_log(file_path: str) -> EvalLog:
-    """
-    Import an Inspect evaluation log file and return an evaluation log object.
+def import_eval_log(file_path: str) -> Any:
+    """Import an Inspect evaluation log from a file.
 
     Parameters
     ----------
@@ -46,9 +52,9 @@ def import_eval_log(file_path: str) -> EvalLog:
     """
     return read_eval_log(file_path)
 
+
 def convert_eval_log(file_path: str) -> List[Report]:
-    """
-    Convert an Inspect evaluation log into a list of AVID Report objects.
+    """Convert an Inspect evaluation log into a list of AVID Report objects.
 
     Parameters
     ----------
@@ -65,42 +71,72 @@ def convert_eval_log(file_path: str) -> List[Report]:
 
     for sample in eval_log.samples:
         report = Report()
-        developer_name = human_readable_name[eval_log.eval.model.split("/", 1)[0]]
+        model_prefix = eval_log.eval.model.split("/", 1)[0]
+        developer_name = human_readable_name[model_prefix]
         task = eval_log.eval.task.rsplit("/", 1)[-1]
         model_name = eval_log.eval.model.rsplit("/", 1)[-1]
-        report.affects = Affect(developer=[developer_name],
-                                deployer=[eval_log.eval.model],
-                                artifact=Artifact(type=ArtifactTypeEnum.model.value, 
-                                                  name=model_name))
-        
-        report.problemtype = ProblemType(classof=ClassEnum.llm.value,
-                                        type=TypeEnum.measurement.value,
-                                        description={"lang": 'eng',
-                                                    "value": f"Evaluation of the LLM {model_name} on the {task} benchmark using Inspect Evals"})
+        report.affects = Affects(
+            developer=[developer_name],
+            deployer=[eval_log.eval.model],
+            artifacts=[Artifact(type=ArtifactTypeEnum.model, name=model_name)],
+        )
 
+        description_value = (
+            f"Evaluation of the LLM {model_name} on the {task} "
+            f"benchmark using Inspect Evals"
+        )
+        report.problemtype = Problemtype(
+            classof=ClassEnum.llm,
+            type=TypeEnum.measurement,
+            description=LangValue(lang="eng", value=description_value),
+        )
+
+        dataset_label = (
+            f"Inspect Evaluation Log for dataset: {eval_log.eval.dataset.name}"
+        )
         report.references = [
             Reference(
-                type='source',
-                label=f"Inspect Evaluation Log for dataset: {eval_log.eval.dataset.name}",
-                url=eval_log.eval.dataset.location
+                type="source",
+                label=dataset_label,
+                url=eval_log.eval.dataset.location,
             )
         ]
-        
-        metrics = ', '.join([metric.name.rsplit('/', 1)[-1] for scorer in eval_log.eval.scorers for metric in scorer.metrics])
-        scorer_desc = '|'.join([f"scorer: {scorer.name}, metrics: {metrics}" for scorer in eval_log.eval.scorers])
+
+        metrics = ", ".join(
+            [
+                metric.name.rsplit("/", 1)[-1]
+                for scorer in eval_log.eval.scorers
+                for metric in scorer.metrics
+            ]
+        )
+        scorer_desc = "|".join(
+            [
+                f"scorer: {scorer.name}, metrics: {metrics}"
+                for scorer in eval_log.eval.scorers
+            ]
+        )
         report.metrics = []
         for sc in eval_log.results.scores:
             for k, v in sc.metrics.items():
-                report.metrics.append({"scorer": sc.name, "metrics": k, "value": v.value})
-        
-        report.description = {
-            "lang": 'eng',
-            "value": f"Evaluation of the LLM {model_name} on the {task} benchmark using Inspect Evals"
-                  f"\n\nSample input: {sample.input}\n\n"
-                  f"Model output: {sample.output}\n\n"
-                  f"Scorer: {scorer_desc}\n\n"
-                  f"Score: {sample.score}"
-        }
+                report.metrics.append(
+                    Metric(
+                        name=k,
+                        detection_method=Detection(
+                            type=MethodEnum.test, name=sc.name
+                        ),
+                        results={"value": v.value, "scorer": sc.name},
+                    )
+                )
+
+        full_description = (
+            f"Evaluation of the LLM {model_name} on the {task} "
+            f"benchmark using Inspect Evals\n\n"
+            f"Sample input: {sample.input}\n\n"
+            f"Model output: {sample.output}\n\n"
+            f"Scorer: {scorer_desc}\n\n"
+            f"Score: {sample.score}"
+        )
+        report.description = LangValue(lang="eng", value=full_description)
 
         reports.append(report)
 
