@@ -83,7 +83,7 @@ class ClassEnum(str, Enum):
     aiid = "AIID Incident"
     atlas = "ATLAS Case Study"
     cve = "CVE Entry"
-    llm = ("LLM Evaluation",)
+    llm = "LLM Evaluation"
     na = "Undefined"
 
 
