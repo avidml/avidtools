@@ -1,6 +1,6 @@
 [project]
 name = "avidtools"
-version = "0.2.0"
+version = "0.2.1"
 description = "Developer tools for AVID"
 authors = [
     {name = "Subho Majumdar", email = "subho@avidml.org"},
