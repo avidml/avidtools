@@ -15,11 +15,12 @@ Dependencies:
     - nvdlib: For fetching CVE data from NVD (already in dependencies)
 """
 
+import argparse
 import asyncio
 import re
 import sys
 import time
-from datetime import date
+from datetime import date, datetime, timezone
 from pathlib import Path
 from typing import List, Optional, Set
 
@@ -582,8 +583,12 @@ def save_reports_to_jsonl(reports: List[Report], output_path: str):
     print(f"Saved {len(reports)} reports to {output_path}")
 
 
-def main():
-    """Main execution function."""
+def main(output_dir: Optional[Path] = None):
+    """Main execution function.
+    
+    Args:
+        output_dir: Directory to save output file. Defaults to script directory.
+    """
     print("="*80)
     print("CVE Scraper - Milev.ai to AVID Vulnerability Converter")
     print("="*80)
@@ -630,10 +635,21 @@ def main():
     print("-" * 80)
     print()
     
-    # Step 4: Save to JSONL file
+    # Step 4: Save to JSONL file in avid-db/reports/review/
     if reports:
         print("Saving outputs...")
-        save_reports_to_jsonl(reports, "mileva_reports.jsonl")
+        
+        # Generate timestamped filename
+        utc_timestamp = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
+        filename = f"cve_digest_{utc_timestamp}.jsonl"
+        
+        # Determine output path (relative to this script's location)
+        script_dir = Path(__file__).parent
+        avid_db_path = script_dir.parent.parent / "avid-db"
+        review_path = avid_db_path / "reports" / "review"
+        output_path = review_path / filename
+        
+        save_reports_to_jsonl(reports, str(output_path))
         
         print()
         print("=" * 80)
@@ -642,11 +658,23 @@ def main():
             f"{len(cve_list)} CVEs into Report objects"
         )
         print("Output file:")
-        print("  - mileva_reports.jsonl (Report objects)")
+        print(f"  - {output_path}")
         print("=" * 80)
     else:
         print("No Reports were successfully created.")
 
 
 if __name__ == "__main__":
-    main()
+    parser = argparse.ArgumentParser(
+        description="Scrape CVE data from Milev.ai and convert to AVID Reports"
+    )
+    parser.add_argument(
+        "--output-dir",
+        type=Path,
+        default=None,
+        help="Output directory for JSONL file (default: script directory)"
+    )
+    
+    args = parser.parse_args()
+    
+    main(output_dir=args.output_dir)
