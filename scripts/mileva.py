@@ -498,9 +498,9 @@ def save_vulnerabilities_to_jsonl(
 
 async def process_single_cve(
     session: aiohttp.ClientSession, cve_id: str, index: int, total: int
-) -> tuple[Optional[Vulnerability], Optional[Report]]:
+) -> Optional[Report]:
     """
-    Process a single CVE: fetch details and create Vulnerability/Report objects.
+    Process a single CVE: fetch details and create Report object.
     
     Args:
         session: aiohttp ClientSession
@@ -509,7 +509,7 @@ async def process_single_cve(
         total: Total number of CVEs
         
     Returns:
-        Tuple of (Vulnerability, Report) or (None, None) if failed
+        Report object or None if failed
     """
     print(f"Processing {index}/{total}: {cve_id}")
     
@@ -517,21 +517,20 @@ async def process_single_cve(
     
     if cve_details:
         try:
-            vulnerability = create_vulnerability_from_cve(cve_details)
             report = create_report_from_cve(cve_details)
-            print(f"✓ Successfully created objects for {cve_id}")
-            return vulnerability, report
+            print(f"✓ Successfully created Report for {cve_id}")
+            return report
         except Exception as e:
-            print(f"✗ Error creating objects for {cve_id}: {e}")
-            return None, None
+            print(f"✗ Error creating Report for {cve_id}: {e}")
+            return None
     else:
         print(f"✗ Failed to fetch details for {cve_id}")
-        return None, None
+        return None
 
 
 async def process_cves_async(
     cve_list: List[str], max_concurrent: int = 10
-) -> tuple[List[Vulnerability], List[Report]]:
+) -> List[Report]:
     """
     Process multiple CVEs concurrently using async/await.
     
@@ -540,9 +539,8 @@ async def process_cves_async(
         max_concurrent: Maximum number of concurrent requests
         
     Returns:
-        Tuple of (vulnerabilities list, reports list)
+        List of Report objects
     """
-    vulnerabilities = []
     reports = []
     
     connector = aiohttp.TCPConnector(limit=max_concurrent)
@@ -558,12 +556,10 @@ async def process_cves_async(
         
         # Collect successful results
         for result in results:
-            if isinstance(result, tuple) and result[0] is not None:
-                vuln, report = result
-                vulnerabilities.append(vuln)
-                reports.append(report)
+            if isinstance(result, Report):
+                reports.append(result)
     
-    return vulnerabilities, reports
+    return reports
 
 
 def save_reports_to_jsonl(reports: List[Report], output_path: str):
@@ -621,35 +617,35 @@ def main():
     print("-" * 80)
     print()
     
-    # Step 3 & 4: Scrape CVE details and create objects (async)
+    # Step 3 & 4: Scrape CVE details and create Report objects (async)
     cve_list = sorted(all_cve_ids)
     
     print(f"Processing {len(cve_list)} CVEs with concurrent requests...")
     print()
     
-    vulnerabilities, reports = asyncio.run(process_cves_async(cve_list, max_concurrent=10))
+    reports = asyncio.run(
+        process_cves_async(cve_list, max_concurrent=10)
+    )
     
     print("-" * 80)
     print()
     
-    # Step 4: Save to JSONL files
-    if vulnerabilities and reports:
+    # Step 4: Save to JSONL file
+    if reports:
         print("Saving outputs...")
-        save_vulnerabilities_to_jsonl(vulnerabilities, "mileva_cves.jsonl")
         save_reports_to_jsonl(reports, "mileva_reports.jsonl")
         
         print()
         print("=" * 80)
         print(
-            f"Complete! Successfully processed {len(vulnerabilities)} out of "
-            f"{len(cve_list)} CVEs into Vulnerability and Report objects"
+            f"Complete! Successfully processed {len(reports)} out of "
+            f"{len(cve_list)} CVEs into Report objects"
         )
-        print("Output files:")
-        print("  - mileva_cves.jsonl (Vulnerability objects)")
+        print("Output file:")
         print("  - mileva_reports.jsonl (Report objects)")
         print("=" * 80)
     else:
-        print("No objects were successfully created.")
+        print("No Reports were successfully created.")
 
 
 if __name__ == "__main__":
