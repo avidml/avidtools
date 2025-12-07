@@ -12,7 +12,7 @@ This script:
 Dependencies:
     - beautifulsoup4: For HTML parsing
     - requests: For HTTP requests
-    - nvdlib: For fetching CVE data from NVD (already in dependencies)
+    - aiohttp: For asynchronous HTTP requests to the MITRE CVE API
 """
 
 import argparse
