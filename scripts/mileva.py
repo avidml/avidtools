@@ -1,12 +1,12 @@
 """
 Script to scrape CVE information from Milev.ai and NVD.
 
-This script structures CVE data into AVID Vulnerability objects.
+This script structures CVE data into AVID Report objects.
 
 This script:
 1. Scrapes unique CVE IDs from Milev.ai research digest pages
 2. Fetches detailed CVE information from NVD
-3. Structures the data into AVID Vulnerability objects
+3. Structures the data into AVID Report objects
 4. Saves all vulnerabilities to a JSONL file
 
 Dependencies:
