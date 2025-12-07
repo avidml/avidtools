@@ -101,6 +101,31 @@ class AvidTaxonomy(BaseModel):
         fields = {"vuln_id": {"exclude": True}}
 
 
+class CVSSScores(BaseModel):
+    """CVSS v3.0/v3.1 severity metrics."""
+
+    version: str
+    vectorString: str
+    baseScore: float
+    baseSeverity: str
+    attackVector: Optional[str] = None
+    attackComplexity: Optional[str] = None
+    privilegesRequired: Optional[str] = None
+    userInteraction: Optional[str] = None
+    scope: Optional[str] = None
+    confidentialityImpact: Optional[str] = None
+    integrityImpact: Optional[str] = None
+    availabilityImpact: Optional[str] = None
+
+
+class CWETaxonomy(BaseModel):
+    """CWE (Common Weakness Enumeration) taxonomy mapping."""
+
+    cweId: str
+    description: Optional[str] = None
+    lang: Optional[str] = None
+
+
 class Impact(BaseModel):
     """Impact information of a report/vulnerability.
 
@@ -109,6 +134,12 @@ class Impact(BaseModel):
 
     avid: AvidTaxonomy
     atlas: Optional[List[AtlasTaxonomy]] = None
+    cvss: Optional[CVSSScores] = None
+    cwe: Optional[List[CWETaxonomy]] = None
 
-    class Config:  # atlas is excluded if None
-        fields = {"atlas": {"exclude": True}}
+    class Config:  # Fields are excluded if None
+        fields = {
+            "atlas": {"exclude": True},
+            "cvss": {"exclude": True},
+            "cwe": {"exclude": True}
+        }
