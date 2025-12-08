@@ -84,6 +84,7 @@ class ClassEnum(str, Enum):
     atlas = "ATLAS Case Study"
     cve = "CVE Entry"
     llm = "LLM Evaluation"
+    third_party = "Third-party Report"
     na = "Undefined"
 
 
