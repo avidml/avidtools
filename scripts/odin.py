@@ -170,26 +170,27 @@ def extract_odin_metadata_from_html(html_content: str, page_text: str) -> dict:
         social_impact_score = match.group(0).strip()
         print(f"  Found Social Impact Score: {social_impact_score}")
     
-    # Extract Jailbreak Taxonomies
+    # Extract Jailbreak Taxonomies from span elements under "Taxonomies" h3
     taxonomy_terms = []
     
-    # Define known taxonomy terms from 0din
-    known_terms = [
-        'FICTIONALIZING', 'RE-STORYING', 'GOAL HIJACKING', 'STRATAGEMS',
-        'META PROMPTING', 'DECEPTIVE FORMATTING', 'CONTEXT INJECTION',
-        'ROLE PLAYING', 'ENCODING', 'OBFUSCATION', 'PAYLOAD SPLITTING',
-        'CONTEXT MANIPULATION', 'STYLE TRANSFER', 'HYPOTHETICAL SCENARIOS',
-        'LINGUISTIC GAMES', 'MISREPRESENTATION', 'VIRTUALIZATION',
-        'ADVERSARIAL SUFFIX', 'MULTI-TURN', 'STRUCTURAL MANIPULATION'
-    ]
+    # Find h3 containing 'Taxonomies'
+    h3_elements = soup.find_all('h3')
+    for h3 in h3_elements:
+        if 'Taxonom' in h3.get_text():
+            # Get parent div
+            parent = h3.find_parent('div')
+            if parent:
+                # Find all direct child span elements within divs
+                divs = parent.find_all('div', recursive=True)
+                for div in divs:
+                    spans = div.find_all('span', recursive=False)
+                    for span in spans:
+                        text = span.get_text().strip()
+                        if text:
+                            taxonomy_terms.append(text)
+            break
     
-    # Search for known taxonomy terms in the page text (preserve order)
-    for term in known_terms:
-        # Use word boundaries to match whole terms
-        pattern = re.compile(r'\b' + re.escape(term) + r'\b', re.IGNORECASE)
-        if pattern.search(page_text):
-            taxonomy_terms.append(term)
-    # Group terms into ordered dicts with Category, Strategy, Technique
+    # Group terms into sets of 3 for Category, Strategy, Technique
     jailbreak_taxonomy = []
     for i in range(0, len(taxonomy_terms), 3):
         group = taxonomy_terms[i:i+3]
@@ -243,6 +244,7 @@ def create_impact(odin_metadata: dict) -> Impact:
 async def scrape_url_async(session: aiohttp.ClientSession, url: str) -> dict:
     """
     Asynchronously scrape content from a URL.
+    Uses cached HTML files from scraped_html/ directory if available.
     
     Args:
         session: aiohttp ClientSession
@@ -251,6 +253,38 @@ async def scrape_url_async(session: aiohttp.ClientSession, url: str) -> dict:
     Returns:
         Dictionary with scraped content
     """
+    # Try to load from cache first
+    if '/disclosures/' in url:
+        uuid = url.split('/')[-1]
+        cached_file = Path(__file__).parent / "scraped_html" / f"{uuid}.html"
+        
+        if cached_file.exists():
+            print(f"  Using cached HTML from {cached_file.name}")
+            content = cached_file.read_text(encoding='utf-8')
+            soup = BeautifulSoup(content, 'html.parser')
+            
+            # Remove script and style elements
+            for script in soup(["script", "style", "nav", "footer", "header"]):
+                script.decompose()
+            
+            # Get title
+            title = soup.title.string if soup.title else ""
+            
+            # Get main text content
+            text = soup.get_text(separator="\n", strip=True)
+            
+            # Clean up whitespace
+            lines = (line.strip() for line in text.splitlines())
+            text = "\n".join(line for line in lines if line)
+            
+            return {
+                "url": url,
+                "title": title.strip(),
+                "text": text,
+                "html": str(soup)[:50000],
+            }
+    
+    # Fall back to live scraping if no cache available
     headers = {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
     }
@@ -365,7 +399,7 @@ async def process_disclosure_async(
 
 
 async def process_all_disclosures_async(
-    uuids: List[str], api_key: Optional[str] = None, model: str = "gpt-4o-mini", max_concurrent: int = 6
+    uuids: List[str], api_key: Optional[str] = None, model: str = "gpt-4o-mini", max_concurrent: int = 2
 ) -> List[Report]:
     """
     Process all disclosures asynchronously using the URL connector.
@@ -374,7 +408,7 @@ async def process_all_disclosures_async(
         uuids: List of disclosure UUIDs to process
         api_key: OpenAI API key
         model: OpenAI model to use
-        max_concurrent: Maximum number of concurrent requests
+        max_concurrent: Maximum number of concurrent requests (reduced to 2 for rate limit stability)
         
     Returns:
         List of successfully created Report objects
@@ -389,28 +423,16 @@ async def process_all_disclosures_async(
         print(f"Error initializing URL connector: {e}")
         return reports
     
-    print(f"\nProcessing {len(uuids)} disclosures asynchronously...")
-    print(f"Max concurrent: {max_concurrent}")
+    print(f"\nProcessing {len(uuids)} disclosures sequentially...")
     print("=" * 80)
     
-    # Create aiohttp session with connection limit
-    conn = aiohttp.TCPConnector(limit=max_concurrent)
-    async with aiohttp.ClientSession(connector=conn) as session:
-        # Create tasks for all disclosures
-        tasks = [
-            process_disclosure_async(connector, session, uuid, i + 1, len(uuids), base_url)
-            for i, uuid in enumerate(uuids)
-        ]
-        
-        # Process with progress updates
-        results = await asyncio.gather(*tasks, return_exceptions=True)
-        
-        # Collect successful results
-        for result in results:
+    # Process sequentially instead of concurrently for reliability
+    async with aiohttp.ClientSession() as session:
+        for i, uuid in enumerate(uuids, 1):
+            result = await process_disclosure_async(connector, session, uuid, i, len(uuids), base_url)
             if isinstance(result, Report):
                 reports.append(result)
-            elif isinstance(result, Exception):
-                print(f"Error: {result}")
+            await asyncio.sleep(0.5)  # Small delay between requests
     
     return reports
 
@@ -435,7 +457,38 @@ def save_reports_to_jsonl(reports: List[Report], output_path: str):
     print(f"\nSaved {len(reports)} reports to {output_path}")
 
 
+def download_page_if_needed(uuid: str, cached_html_dir: Path) -> bool:
+    """
+    Download and save a disclosure page if it doesn't exist locally.
+    
+    Args:
+        uuid: Disclosure UUID
+        cached_html_dir: Directory to save HTML files
+        
+    Returns:
+        True if successful, False otherwise
+    """
+    cached_file = cached_html_dir / f"{uuid}.html"
+    
+    if cached_file.exists():
+        return True
+    
+    url = f"https://0din.ai/disclosures/{uuid}"
+    print(f"  Downloading {uuid}...")
+    
+    try:
+        response = requests.get(url, timeout=30)
+        response.raise_for_status()
+        cached_file.write_text(response.text, encoding='utf-8')
+        print(f"    ✓ Saved to {cached_file.name}")
+        return True
+    except Exception as e:
+        print(f"    ✗ Error: {e}")
+        return False
+
+
 def main(
+    page_number: int = 1,
     output_dir: Optional[Path] = None,
     api_key: Optional[str] = None,
     model: str = "gpt-4o-mini"
@@ -444,6 +497,7 @@ def main(
     Main execution function.
     
     Args:
+        page_number: Page number to scrape from 0din.ai (default: 1)
         output_dir: Directory to save output file. Defaults to script directory.
         api_key: OpenAI API key. Uses OPENAI_API_KEY env var if not provided.
         model: OpenAI model to use for report generation.
@@ -461,24 +515,36 @@ def main(
         print("Error: OpenAI API key required. Set OPENAI_API_KEY environment variable or use --api-key")
         return
     
-    # Step 1: Scrape page 1 to get disclosure UUIDs
-    print("Step 1: Extracting disclosure UUIDs from page 1...")
+    # Step 1: Get disclosure UUIDs from the specified page and download if needed
+    print(f"Step 1: Extracting disclosure UUIDs from page {page_number}...")
     print("-" * 80)
-    page_url = "https://0din.ai/disclosures?page=1"
-    uuids = extract_disclosure_uuids(page_url)
     
-    if not uuids:
-        print("No disclosure UUIDs found. Exiting.")
+    page_url = f"https://0din.ai/disclosures?page={page_number}"
+    uuids_set = extract_disclosure_uuids(page_url)
+    
+    if not uuids_set:
+        print(f"No disclosure UUIDs found on page {page_number}. Exiting.")
         return
     
-    uuids_list = sorted(uuids)
-    print(f"Found {len(uuids_list)} disclosures to process")
+    uuids_list = sorted(uuids_set)
+    
+    # Step 2: Ensure all disclosure HTML files are cached locally
+    print(f"\nStep 2: Ensuring {len(uuids_list)} disclosures are cached locally...")
+    print("-" * 80)
+    
+    cached_html_dir = Path(__file__).parent / "scraped_html"
+    cached_html_dir.mkdir(exist_ok=True)
+    
+    for uuid in uuids_list:
+        download_page_if_needed(uuid, cached_html_dir)
+        time.sleep(0.3)  # Small delay between downloads
+    
     print()
     print("-" * 80)
     print()
     
-    # Step 2: Process all disclosures asynchronously
-    print("Step 2: Processing disclosures and creating reports...")
+    # Step 3: Process all disclosures asynchronously
+    print("Step 3: Processing disclosures and creating reports...")
     print("-" * 80)
     reports = asyncio.run(process_all_disclosures_async(uuids_list, api_key=api_key, model=model))
     
@@ -486,7 +552,7 @@ def main(
     print("=" * 80)
     print()
     
-    # Step 3: Save reports to JSONL file
+    # Step 4: Save reports to JSONL file
     if reports:
         print("Step 4: Saving reports...")
         print("-" * 80)
@@ -524,6 +590,12 @@ if __name__ == "__main__":
         description="Scrape AI security disclosures from 0din.ai and convert to AVID Reports"
     )
     parser.add_argument(
+        "--page",
+        type=int,
+        default=1,
+        help="Page number to scrape from 0din.ai (default: 1)"
+    )
+    parser.add_argument(
         "--output-dir",
         type=Path,
         default=None,
@@ -544,4 +616,4 @@ if __name__ == "__main__":
     
     args = parser.parse_args()
     
-    main(output_dir=args.output_dir, api_key=args.api_key, model=args.model)
+    main(page_number=args.page, output_dir=args.output_dir, api_key=args.api_key, model=args.model)
