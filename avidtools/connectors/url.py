@@ -8,7 +8,7 @@ from datetime import date
 from typing import Optional
 import requests
 from bs4 import BeautifulSoup
-from openai import OpenAI
+from openai import OpenAI, AsyncOpenAI
 
 from ..datamodels.report import Report, ReportMetadata
 from ..datamodels.components import (
@@ -50,6 +50,7 @@ class URLConnector:
             )
         self.model = model
         self.client = OpenAI(api_key=self.api_key)
+        self.async_client = AsyncOpenAI(api_key=self.api_key)
 
     def scrape_url(self, url: str) -> dict:
         """
@@ -114,19 +115,79 @@ class URLConnector:
         """
         prompt = f"""You are an AI security expert tasked with analyzing web content about AI/ML vulnerabilities, incidents, or security issues and extracting structured information to create an AVID (AI Vulnerability Database) report.
 
-The AVID report structure includes:
-- **report_id**: A unique identifier (generate one like "AVID-YYYY-R-XXXX")
-- **affects**: Information about affected artifacts including:
-  - developer: List of developers/organizations
-  - deployer: List of deployers/organizations
-  - artifacts: List of artifacts with type (MUST be one of: "Model", "Dataset", "System") and name
-- **problemtype**: Problem description with:
-  - classof: Class (MUST be one of: "AIID Incident", "ATLAS Case Study", "CVE Entry", "LLM Evaluation", "Third-party Report", "Undefined"). Default to "Third-party Report" if unsure.
-  - type: Type (MUST be one of: "Issue", "Advisory", "Measurement", "Detection")
-  - description: language ("eng") and value (description text)
-- **description**: High-level description with lang and value
-- **references**: List of references with label and url (MUST include the source URL)
-- **reported_date**: Date in YYYY-MM-DD format (use today's date if not specified)
+The AVID Report follows this exact schema:
+
+```json
+{{
+  "data_type": "AVID",
+  "data_version": "string (optional)",
+  "metadata": {{
+    "report_id": "string (required, format: AVID-YYYY-R-XXXX)"
+  }},
+  "affects": {{
+    "developer": ["list of developer organizations of the model/system involved"],
+    "deployer": ["list of deployer organizations"],
+    "artifacts": [
+      {{
+        "type": "Model|Dataset|System (required)",
+        "name": "artifact name (required)"
+      }}
+    ]
+  }},
+  "problemtype": {{
+    "classof": "AIID Incident|ATLAS Case Study|CVE Entry|LLM Evaluation|Third-party Report|Undefined (required, default: Third-party Report)",
+    "type": "Issue|Advisory|Measurement|Detection (optional)",
+    "description": {{
+      "lang": "eng",
+      "value": "description text"
+    }}
+  }},
+  "metrics": [
+    {{
+      "name": "metric name",
+      "detection_method": {{
+        "type": "Significance Test|Static Threshold",
+        "name": "method name"
+      }},
+      "results": {{}} or []
+    }}
+  ],
+  "references": [
+    {{
+      "label": "reference label",
+      "url": "reference url (MUST include source URL)"
+    }}
+  ],
+  "description": {{
+    "lang": "eng",
+    "value": "high-level description"
+  }},
+  "impact": {{
+    "avid": {{
+      "risk_domain": ["list of risk domains"],
+      "sep_view": ["list of SEP taxonomy IDs"],
+      "lifecycle_view": ["list of lifecycle stage IDs"],
+      "taxonomy_version": "version string"
+    }},
+    "atlas": [
+      {{
+        "tactic": "tactic name",
+        "technique": "technique name",
+        "subtechnique": "subtechnique name"
+      }}
+    ]
+  }},
+  "credit": [
+    {{
+      "lang": "eng",
+      "value": "credited person or organization"
+    }}
+  ],
+  "reported_date": "YYYY-MM-DD"
+}}
+```
+
+All fields except those marked as required are optional. Omit fields if information is not available.
 
 Here is the web content to analyze:
 
@@ -239,10 +300,50 @@ Important guidelines:
             artifacts = []
             if "artifacts" in affects_data:
                 for artifact_data in affects_data["artifacts"]:
+                    artifact_type = ArtifactTypeEnum(artifact_data["type"])
+                    artifact_name = artifact_data["name"]
+                    
+                    # Reclassify models as systems based on provider-specific rules
+                    if artifact_type == ArtifactTypeEnum.model:
+                        artifact_name_lower = artifact_name.lower()
+                        
+                        # OpenAI: All LLMs are systems
+                        if "openai" in artifact_name_lower:
+                            artifact_type = ArtifactTypeEnum.system
+                        
+                        # Anthropic: All LLMs are systems
+                        elif "anthropic" in artifact_name_lower:
+                            artifact_type = ArtifactTypeEnum.system
+                        
+                        # Google: Gemini series are systems, Gemma are models
+                        elif "google" in artifact_name_lower or "gemini" in artifact_name_lower:
+                            if "gemini" in artifact_name_lower:
+                                artifact_type = ArtifactTypeEnum.system
+                            # gemma remains as model
+                        
+                        # Cohere: All except Command R and Aya are systems
+                        elif "cohere" in artifact_name_lower:
+                            if "command r" not in artifact_name_lower and "aya" not in artifact_name_lower:
+                                artifact_type = ArtifactTypeEnum.system
+                        
+                        # Mistral: Large, Medium, Moderation, Embed are systems
+                        elif "mistral" in artifact_name_lower:
+                            if any(variant in artifact_name_lower for variant in ["large", "medium", "moderation", "embed"]):
+                                artifact_type = ArtifactTypeEnum.system
+                        
+                        # Alibaba: Qwen Max and Turbo are systems
+                        elif "alibaba" in artifact_name_lower or "qwen" in artifact_name_lower:
+                            if "qwen max" in artifact_name_lower or "qwen turbo" in artifact_name_lower:
+                                artifact_type = ArtifactTypeEnum.system
+                        
+                        # Meta, Twitter/X, Mozilla remain as systems (closed APIs)
+                        elif any(provider in artifact_name_lower for provider in ["twitter", "grok"]):
+                            artifact_type = ArtifactTypeEnum.system
+                    
                     artifacts.append(
                         Artifact(
-                            type=ArtifactTypeEnum(artifact_data["type"]),
-                            name=artifact_data["name"],
+                            type=artifact_type,
+                            name=artifact_name,
                         )
                     )
             affects = Affects(

@@ -37,7 +37,10 @@ from avidtools.datamodels.components import (  # noqa: E402
     Impact,
     OdinTaxonomy,
     JailbreakTaxonomyItem,
+    Metric,
+    Detection,
 )
+from avidtools.datamodels.enums import TypeEnum, MethodEnum  # noqa: E402
 
 
 def scrape_disclosure_pages(base_url: str = "https://0din.ai/disclosures", max_pages: int = 6) -> List[str]:
@@ -148,14 +151,14 @@ def extract_odin_metadata_from_html(html_content: str, page_text: str) -> dict:
     """
     Extract 0DIN-specific metadata from already-scraped HTML content.
     
-    Extracts Social Impact Score level and Jailbreak Taxonomy values.
+    Extracts Social Impact Score, Jailbreak Taxonomy, artifact type, and metrics.
     
     Args:
         html_content: HTML content from the page
         page_text: Text content from the page
         
     Returns:
-        Dictionary with 'social_impact_score' and 'jailbreak_taxonomy' keys
+        Dictionary with 'social_impact_score', 'jailbreak_taxonomy', 'artifact_type', and 'metrics' keys
     """
     print(f"Extracting 0DIN metadata from scraped content...")
     
@@ -204,9 +207,88 @@ def extract_odin_metadata_from_html(html_content: str, page_text: str) -> dict:
     if jailbreak_taxonomy:
         print(f"  Found Jailbreak Taxonomies: {jailbreak_taxonomy}")
     
+    # Check for Metadata and Test Scores sections to determine problemtype.type and extract metrics
+    problemtype_type = TypeEnum.issue
+    metrics = []
+    
+    h3_elements = soup.find_all('h3')
+    has_metadata = any('Metadata' in h3.get_text() for h3 in h3_elements)
+    has_test_scores = any('Test Scores' in h3.get_text() or 'Test Score' in h3.get_text() for h3 in h3_elements)
+    
+    if has_metadata and has_test_scores:
+        problemtype_type = TypeEnum.measurement
+        print(f"  Found Metadata and Test Scores sections - setting problemtype.type to Measurement")
+        
+        # Extract metrics from table under Test Scores
+        for h3 in h3_elements:
+            if 'Test Score' in h3.get_text():
+                # Find the next table after this h3
+                next_elem = h3.find_next_sibling()
+                while next_elem:
+                    if next_elem.name == 'table':
+                        # Extract column headers from <thead><tr><th>
+                        thead = next_elem.find('thead')
+                        column_keys = []
+                        if thead:
+                            header_row = thead.find('tr')
+                            if header_row:
+                                column_keys = [th.get_text().strip() for th in header_row.find_all('th')]
+                        
+                        # Extract data rows from <tbody><tr><td>
+                        table_data = []
+                        tbody = next_elem.find('tbody')
+                        if tbody and column_keys:
+                            data_rows = tbody.find_all('tr')
+                            for idx, row in enumerate(data_rows):
+                                cells = row.find_all('td')
+                                row_data = {}
+                                for col_idx, cell in enumerate(cells):
+                                    if col_idx < len(column_keys):
+                                        row_data[column_keys[col_idx]] = cell.get_text().strip()
+                                # Use row index as key for each row
+                                table_data.append(row_data)
+                        
+                        if table_data:
+                            metric = Metric(
+                                name="0DIN Test Scores",
+                                detection_method=Detection(
+                                    type=MethodEnum.thres,
+                                    name="0DIN Jailbreak Testing"
+                                ),
+                                results={"Test Scores": table_data}
+                            )
+                            metrics.append(metric)
+                            print(f"  Extracted metrics from Test Scores table: {len(table_data)} rows")
+                        break
+                    next_elem = next_elem.find_next_sibling()
+                break
+    else:
+        print(f"  No Metadata/Test Scores sections found - setting problemtype.type to Issue")
+    
+    # Extract credit information
+    credit = None
+    for h2 in soup.find_all('h2', class_='card-title'):
+        if 'Credit' in h2.get_text():
+            # Find the parent card-body and get the text content
+            card_body = h2.find_parent('div', class_='card-body')
+            if card_body:
+                # Get all text after the h2, excluding the h2 itself
+                credit_text = []
+                for elem in card_body.find_all(['p', 'span', 'div']):
+                    text = elem.get_text().strip()
+                    if text and text != 'Credit':
+                        credit_text.append(text)
+                if credit_text:
+                    credit = ' '.join(credit_text)
+                    print(f"  Found Credit: {credit}")
+            break
+    
     return {
         "social_impact_score": social_impact_score,
-        "jailbreak_taxonomy": jailbreak_taxonomy
+        "jailbreak_taxonomy": jailbreak_taxonomy,
+        "problemtype_type": problemtype_type,
+        "metrics": metrics,
+        "credit": credit
     }
 
 
@@ -356,7 +438,7 @@ async def process_disclosure_async(
         
         for attempt in range(3):  # max_retries + 1
             try:
-                response = connector.client.chat.completions.create(
+                response = await connector.async_client.chat.completions.create(
                     model=connector.model,
                     messages=[
                         {
@@ -387,9 +469,27 @@ async def process_disclosure_async(
                 else:
                     raise RuntimeError(f"Failed to create report after 3 attempts: {str(e)}")
         
-        # Step 4: Create and populate Impact field
+        # Step 4: Modify problemtype.type based on extracted metadata
+        if report.problemtype:
+            report.problemtype.type = odin_metadata["problemtype_type"]
+            print(f"  Set problemtype.type to: {odin_metadata['problemtype_type'].value}")
+        
+        # Step 5: Add metrics if present
+        if odin_metadata["metrics"]:
+            report.metrics = odin_metadata["metrics"]
+            print(f"  Added {len(odin_metadata['metrics'])} metric(s) to report")
+        
+        # Step 6: Create and populate Impact field
         impact = create_impact(odin_metadata)
         report.impact = impact
+        
+        # Step 7: Add credit if present
+        if odin_metadata["credit"]:
+            from avidtools.datamodels.components import LangValue
+            # Split credit by commas and create separate LangValue entries
+            credit_names = [name.strip() for name in odin_metadata["credit"].split(',')]
+            report.credit = [LangValue(lang="eng", value=name) for name in credit_names if name]
+            print(f"  Added credit: {len(report.credit)} contributor(s)")
         
         print(f"✓ Successfully created Report for {uuid}")
         return report
@@ -423,16 +523,29 @@ async def process_all_disclosures_async(
         print(f"Error initializing URL connector: {e}")
         return reports
     
-    print(f"\nProcessing {len(uuids)} disclosures sequentially...")
+    print(f"\nProcessing {len(uuids)} disclosures concurrently (max {max_concurrent} at a time)...")
     print("=" * 80)
     
-    # Process sequentially instead of concurrently for reliability
+    # Process with limited concurrency using semaphore
+    semaphore = asyncio.Semaphore(max_concurrent)
+    
+    async def process_with_semaphore(session, uuid, i):
+        async with semaphore:
+            return await process_disclosure_async(connector, session, uuid, i, len(uuids), base_url)
+    
     async with aiohttp.ClientSession() as session:
-        for i, uuid in enumerate(uuids, 1):
-            result = await process_disclosure_async(connector, session, uuid, i, len(uuids), base_url)
-            if isinstance(result, Report):
-                reports.append(result)
-            await asyncio.sleep(0.5)  # Small delay between requests
+        tasks = [
+            process_with_semaphore(session, uuid, i)
+            for i, uuid in enumerate(uuids, 1)
+        ]
+        results = await asyncio.gather(*tasks, return_exceptions=True)
+    
+    # Filter successful reports
+    for result in results:
+        if isinstance(result, Report):
+            reports.append(result)
+        elif isinstance(result, Exception):
+            print(f"✗ Task failed with exception: {result}")
     
     return reports
 
