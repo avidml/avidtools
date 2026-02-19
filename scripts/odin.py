@@ -39,6 +39,7 @@ from avidtools.datamodels.components import (  # noqa: E402
     JailbreakTaxonomyItem,
     Metric,
     Detection,
+    LangValue,
 )
 from avidtools.datamodels.enums import TypeEnum, MethodEnum  # noqa: E402
 
@@ -151,18 +152,37 @@ def extract_odin_metadata_from_html(html_content: str, page_text: str) -> dict:
     """
     Extract 0DIN-specific metadata from already-scraped HTML content.
     
-    Extracts Social Impact Score, Jailbreak Taxonomy, artifact type, and metrics.
+    Extracts Social Impact Score, Jailbreak Taxonomy, title/summary fields,
+    artifact type, and metrics.
     
     Args:
         html_content: HTML content from the page
         page_text: Text content from the page
         
     Returns:
-        Dictionary with 'social_impact_score', 'jailbreak_taxonomy', 'artifact_type', and 'metrics' keys
+        Dictionary with extracted 0DIN metadata for report enrichment.
     """
     print(f"Extracting 0DIN metadata from scraped content...")
     
     soup = BeautifulSoup(html_content, 'html.parser')
+
+    # Extract problemtype.description.value from first h2.card-title
+    problemtype_description_value = None
+    title_h2 = soup.find('h2', class_='card-title')
+    if title_h2:
+        problemtype_description_value = title_h2.get_text(strip=True)
+        if problemtype_description_value:
+            print(f"  Found problemtype.description.value: {problemtype_description_value}")
+
+    # Extract description.value from the first <p> following <h3>Summary</h3>
+    description_value = None
+    summary_h3 = soup.find('h3', string=lambda s: s and s.strip() == 'Summary')
+    if summary_h3:
+        summary_p = summary_h3.find_next('p')
+        if summary_p:
+            description_value = summary_p.get_text(strip=True)
+            if description_value:
+                print("  Found description.value from Summary paragraph")
     
     # Extract Social Impact Score
     social_impact_score = None
@@ -286,6 +306,8 @@ def extract_odin_metadata_from_html(html_content: str, page_text: str) -> dict:
     return {
         "social_impact_score": social_impact_score,
         "jailbreak_taxonomy": jailbreak_taxonomy,
+        "problemtype_description_value": problemtype_description_value,
+        "description_value": description_value,
         "problemtype_type": problemtype_type,
         "metrics": metrics,
         "credit": credit
@@ -473,6 +495,20 @@ async def process_disclosure_async(
         if report.problemtype:
             report.problemtype.type = odin_metadata["problemtype_type"]
             print(f"  Set problemtype.type to: {odin_metadata['problemtype_type'].value}")
+
+            if odin_metadata.get("problemtype_description_value"):
+                report.problemtype.description = LangValue(
+                    lang="eng",
+                    value=odin_metadata["problemtype_description_value"]
+                )
+                print("  Set problemtype.description.value from h2.card-title")
+
+        if odin_metadata.get("description_value"):
+            report.description = LangValue(
+                lang="eng",
+                value=odin_metadata["description_value"]
+            )
+            print("  Set description.value from Summary paragraph")
         
         # Step 5: Add metrics if present
         if odin_metadata["metrics"]:
@@ -485,7 +521,6 @@ async def process_disclosure_async(
         
         # Step 7: Add credit if present
         if odin_metadata["credit"]:
-            from avidtools.datamodels.components import LangValue
             # Split credit by commas and create separate LangValue entries
             credit_names = [name.strip() for name in odin_metadata["credit"].split(',')]
             report.credit = [LangValue(lang="eng", value=name) for name in credit_names if name]
