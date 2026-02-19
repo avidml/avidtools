@@ -2,7 +2,7 @@
 Component data classes used in AVID report and vulnerability datamodels.
 """
 
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional
 from pydantic import BaseModel
 
 from .enums import (
@@ -126,20 +126,51 @@ class CWETaxonomy(BaseModel):
     lang: Optional[str] = None
 
 
+class JailbreakTaxonomyItem(BaseModel):
+    """0DIN Jailbreak Taxonomy item with Category, Strategy, and Technique."""
+
+    Category: Optional[str] = None
+    Strategy: Optional[str] = None
+    Technique: Optional[str] = None
+
+    class Config:  # Fields are excluded if None
+        fields = {
+            "Category": {"exclude": True},
+            "Strategy": {"exclude": True},
+            "Technique": {"exclude": True}
+        }
+
+
+class OdinTaxonomy(BaseModel):
+    """0DIN taxonomy mapping for AI security disclosures."""
+
+    SocialImpactScore: Optional[str] = None
+    JailbreakTaxonomy: Optional[List[JailbreakTaxonomyItem]] = None
+
+    class Config:  # Fields are excluded if None
+        fields = {
+            "SocialImpactScore": {"exclude": True},
+            "JailbreakTaxonomy": {"exclude": True}
+        }
+
+
 class Impact(BaseModel):
     """Impact information of a report/vulnerability.
 
     E.g. different taxonomy mappings, harm and severity scores.
     """
 
-    avid: AvidTaxonomy
+    avid: Optional[AvidTaxonomy] = None
     atlas: Optional[List[AtlasTaxonomy]] = None
     cvss: Optional[CVSSScores] = None
     cwe: Optional[List[CWETaxonomy]] = None
+    odin: Optional[OdinTaxonomy] = None
 
     class Config:  # Fields are excluded if None
         fields = {
+            "avid": {"exclude": True},
             "atlas": {"exclude": True},
             "cvss": {"exclude": True},
-            "cwe": {"exclude": True}
+            "cwe": {"exclude": True},
+            "odin": {"exclude": True}
         }
