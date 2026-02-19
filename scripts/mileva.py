@@ -177,6 +177,7 @@ async def scrape_nvd_cve_details(
     details = {
         'cve_id': cve_id,
         'url': f"https://www.cve.org/CVERecord?id={cve_id}",
+        'title': None,
         'description': None,
         'published_date': None,
         'last_modified_date': None,
@@ -193,6 +194,11 @@ async def scrape_nvd_cve_details(
     try:
         containers = cve_data.get('containers', {})
         cna = containers.get('cna', {})
+
+        # Get CNA title
+        title = cna.get('title')
+        if isinstance(title, str):
+            details['title'] = title.strip()
         
         # Get description
         descriptions = cna.get('descriptions', [])
@@ -268,7 +274,7 @@ async def scrape_nvd_cve_details(
 def create_description(cve_id: str, cve_details: dict) -> Optional[LangValue]:
     """Create description LangValue object."""
     if cve_details['description']:
-        return LangValue(lang="eng", value=cve_id + " Detail")
+        return LangValue(lang="eng", value=cve_details['description'])
     return None
 
 
@@ -296,10 +302,7 @@ def create_references(cve_details: dict) -> List[Reference]:
 
 def create_problemtype(cve_id: str, cve_details: dict) -> Problemtype:
     """Create problemtype from CVE details."""
-    problemtype_desc = cve_details['description'] or f"Vulnerability {cve_id}"
-    if cve_details['cwe_ids']:
-        cwe_list = ', '.join(cve_details['cwe_ids'])
-        problemtype_desc = f"{cwe_list}: {problemtype_desc}"
+    problemtype_desc = cve_details.get('title') or f"Vulnerability {cve_id}"
     
     return Problemtype(
         classof=ClassEnum.cve,
