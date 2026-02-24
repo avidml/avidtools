@@ -225,21 +225,21 @@ class TestInspectConnector:
         assert report.affects.deployer == ["anthropic/claude-3"]
         assert report.affects.artifacts[0].name == "claude-3"
 
-    @patch('avidtools.connectors.inspect.enrich_report_data')
+    @patch('avidtools.connectors.inspect.normalize_report_data')
     @patch('avidtools.connectors.inspect.import_eval_log')
-    def test_convert_eval_log_with_enrich_enabled(
+    def test_convert_eval_log_with_normalize_enabled(
         self,
         mock_import,
-        mock_enrich,
+        mock_normalize,
     ):
-        """Enrich mode should call enrich_report_data for each sample."""
+        """Normalize mode should call normalize_report_data for each sample."""
         mock_eval_log = MockEvalLog()
         mock_import.return_value = mock_eval_log
 
-        reports = convert_eval_log("/path/to/eval.json", enrich=True)
+        reports = convert_eval_log("/path/to/eval.json", normalize=True)
 
         assert len(reports) == 1
-        assert mock_enrich.call_count == 1
+        assert mock_normalize.call_count == 1
 
     @patch('avidtools.connectors.inspect.urlopen')
     def test_fetch_sections_raises_on_unresolved_benchmark(self, mock_urlopen):

@@ -160,7 +160,7 @@ def extract_odin_metadata_from_html(html_content: str, page_text: str) -> dict:
         page_text: Text content from the page
         
     Returns:
-        Dictionary with extracted 0DIN metadata for report enrichment.
+        Dictionary with extracted 0DIN metadata for report normalization.
     """
     print(f"Extracting 0DIN metadata from scraped content...")
     

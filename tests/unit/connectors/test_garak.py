@@ -1,4 +1,4 @@
-"""Unit tests for Garak connector enrich helpers."""
+"""Unit tests for Garak connector normalize helpers."""
 
 from avidtools.connectors.garak import _normalize_metric_results
 
