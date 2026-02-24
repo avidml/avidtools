@@ -20,7 +20,7 @@ from ..datamodels.components import (
     Reference,
 )
 from ..datamodels.enums import ClassEnum, MethodEnum, TypeEnum
-from .utils import apply_review_normalizations
+from .utils import apply_review_normalizations, choose_model_subject_label
 
 try:
     from inspect_ai.log import read_eval_log, EvalLog
@@ -320,12 +320,16 @@ def _build_new_description(
     model_name: str,
     overview: str,
     scoring: str,
+    subject_label: str,
 ) -> str:
     """Build standardized normalized report description text."""
 
+    subject_label_display = "LLM" if subject_label == "llm" else "AI system"
+
     return (
         f"{overview}\n\n"
-        f"We evaluated the LLM {model_name} on this benchmark.\n\n"
+        f"The {subject_label_display} {model_name} was evaluated "
+        "on this benchmark.\n\n"
         "## Measurement details\n\n"
         f"{scoring}"
     )
@@ -359,19 +363,21 @@ def normalize_report_data(report: dict):
     model_name = match.group(1)
     benchmark = match.group(2)
 
+    apply_review_normalizations(report, preferred_model_name=model_name)
+
     _, overview, scoring = _fetch_sections(benchmark)
     overview = _first_line(overview)
+    subject_label = choose_model_subject_label(report)
 
     description = report.setdefault("description", {})
     description["value"] = _build_new_description(
         model_name=model_name,
         overview=overview,
         scoring=scoring,
+        subject_label=subject_label,
     )
     if "lang" not in description:
         description["lang"] = "eng"
-
-    apply_review_normalizations(report, preferred_model_name=model_name)
 
 
 def process_report(file_path: Path):
