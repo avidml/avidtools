@@ -1,7 +1,7 @@
-import argparse
+"""Connector helpers for converting and enriching Inspect evaluation reports."""
+
 import json
 import re
-import sys
 from html import unescape
 from pathlib import Path
 from typing import Any, List, Tuple
@@ -53,7 +53,13 @@ CYSE2_URL = (
 PATTERN = re.compile(
     r"^Evaluation of the LLM (.+?) on the (.+?) benchmark using Inspect Evals$"
 )
-CATEGORY_CANDIDATES = ("safeguards", "scheming", "bias")
+CATEGORY_CANDIDATES = ("safeguards", "scheming", "bias", "cybersecurity")
+
+
+class UnsupportedInspectBenchmarkError(RuntimeError):
+    """Raised when an Inspect benchmark cannot be resolved to a supported page."""
+
+    pass
 
 
 def import_eval_log(file_path: str) -> Any:
@@ -175,6 +181,8 @@ def convert_eval_log(file_path: str, enrich: bool = False) -> List[Report]:
 
 
 def _clean_html_to_text(fragment: str) -> str:
+    """Strip HTML tags and normalize whitespace for section extraction."""
+
     text = re.sub(r"<script[\\s\\S]*?</script>", "", fragment, flags=re.I)
     text = re.sub(r"<style[\\s\\S]*?</style>", "", text, flags=re.I)
     text = re.sub(r"<br\\s*/?>", "\\n", text, flags=re.I)
@@ -198,6 +206,8 @@ def _clean_html_to_text(fragment: str) -> str:
 
 
 def _extract_section(html: str, section_id: str) -> str:
+    """Extract a section body by heading id from an Inspect docs page."""
+
     candidates = [
         section_id,
         f"{section_id}Anchor",
@@ -243,6 +253,8 @@ def _extract_section(html: str, section_id: str) -> str:
 
 
 def _fetch_sections(benchmark: str) -> Tuple[str, str, str]:
+    """Fetch overview and scoring sections for a benchmark slug."""
+
     if benchmark.startswith("cyse2_"):
         try:
             with urlopen(CYSE2_URL, timeout=30) as response:
@@ -298,7 +310,7 @@ def _fetch_sections(benchmark: str) -> Tuple[str, str, str]:
 
             return slug, overview, scoring
 
-    raise RuntimeError(
+    raise UnsupportedInspectBenchmarkError(
         "No matching Inspect Evals page found under categories "
         f"{CATEGORY_CANDIDATES} for benchmark '{benchmark}'"
     )
@@ -309,6 +321,8 @@ def _build_new_description(
     overview: str,
     scoring: str,
 ) -> str:
+    """Build standardized enriched report description text."""
+
     return (
         f"{overview}\n\n"
         f"We evaluated the LLM {model_name} on this benchmark.\n\n"
@@ -318,6 +332,8 @@ def _build_new_description(
 
 
 def _first_line(text: str) -> str:
+    """Return the first non-empty line from a text block."""
+
     for line in text.splitlines():
         stripped = line.strip()
         if stripped:
@@ -326,6 +342,8 @@ def _first_line(text: str) -> str:
 
 
 def enrich_report_data(report: dict):
+    """Apply Inspect enrich transformations to a report dictionary."""
+
     problem_desc = (
         report.get("problemtype", {})
         .get("description", {})
@@ -333,7 +351,7 @@ def enrich_report_data(report: dict):
     )
     match = PATTERN.match(problem_desc)
     if not match:
-        sys.exit(
+        raise ValueError(
             "problemtype.description.value is not in expected format: "
             "Evaluation of the LLM $X on the $Y benchmark using Inspect Evals"
         )
@@ -357,6 +375,8 @@ def enrich_report_data(report: dict):
 
 
 def process_report(file_path: Path):
+    """Load, enrich, and rewrite a single Inspect report file."""
+
     with file_path.open("r", encoding="utf-8") as file_obj:
         report = json.load(file_obj)
 
@@ -367,21 +387,3 @@ def process_report(file_path: Path):
         file_obj.write("\n")
 
     print(f"Updated {file_path}")
-
-
-def main():
-    parser = argparse.ArgumentParser(
-        description="Review and correct Inspect Evals AVID report JSON files."
-    )
-    parser.add_argument("report", type=Path, help="Path to report JSON file")
-    args = parser.parse_args()
-
-    report_path = args.report.resolve()
-    if not report_path.exists() or not report_path.is_file():
-        sys.exit(f"Report file does not exist: {report_path}")
-
-    process_report(report_path)
-
-
-if __name__ == "__main__":
-    main()

@@ -1,16 +1,14 @@
-#!/usr/bin/env python3
+"""Generic enrich helpers for AVID report JSON and JSONL files."""
 
-"""Generic enrich script for AVID report JSON and JSONL files."""
-
-import argparse
 import json
-import sys
 from pathlib import Path
 
 from .utils import apply_enrich_normalizations
 
 
 def _enrich_report(report: dict) -> None:
+    """Apply generic enrich normalizations to a single report dict."""
+
     apply_enrich_normalizations(report)
 
 
@@ -18,6 +16,8 @@ def process_json_file(
     input_path: Path,
     dry_run: bool,
 ):
+    """Enrich a JSON file containing one report object or a list of reports."""
+
     with input_path.open("r", encoding="utf-8") as file_obj:
         payload = json.load(file_obj)
 
@@ -50,6 +50,8 @@ def process_jsonl_file(
     input_path: Path,
     dry_run: bool,
 ):
+    """Enrich each report object in a JSONL file."""
+
     reports_enriched = 0
     enriched_lines = []
 
@@ -83,53 +85,11 @@ def process_jsonl_file(
     return reports_enriched
 
 
-def main():
-    parser = argparse.ArgumentParser(
-        description="Enrich reports and normalize input files in place."
-    )
-    parser.add_argument(
-        "input_path",
-        type=Path,
-        help="Path to .json or .jsonl file",
-    )
-    parser.add_argument(
-        "--dry-run",
-        action="store_true",
-        help="Show enrich count without writing changes",
-    )
+def enrich_file(input_path: Path, dry_run: bool = False) -> int:
+    """Dispatch enrich processing based on input file extension."""
 
-    args = parser.parse_args()
-
-    input_path = args.input_path.resolve()
-    if not input_path.exists() or not input_path.is_file():
-        print(f"ERROR: Input file does not exist: {input_path}")
-        sys.exit(1)
-
-    try:
-        if input_path.suffix == ".json":
-            reports_enriched = process_json_file(
-                input_path,
-                args.dry_run,
-            )
-        elif input_path.suffix == ".jsonl":
-            reports_enriched = process_jsonl_file(
-                input_path,
-                args.dry_run,
-            )
-        else:
-            print(f"ERROR: Unsupported file type: {input_path.suffix}")
-            print("Supported types: .json, .jsonl")
-            sys.exit(1)
-    except Exception as error:
-        print(f"ERROR: {error}")
-        sys.exit(1)
-
-    print(f"Enriched {reports_enriched} report(s) in {input_path}")
-    if args.dry_run:
-        print("Dry run complete: no file changes were written")
-    else:
-        print("Saved normalized updates in place")
-
-
-if __name__ == "__main__":
-    main()
+    if input_path.suffix == ".json":
+        return process_json_file(input_path, dry_run)
+    if input_path.suffix == ".jsonl":
+        return process_jsonl_file(input_path, dry_run)
+    raise ValueError(f"Unsupported file type: {input_path.suffix}")

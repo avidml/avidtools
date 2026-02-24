@@ -10,6 +10,8 @@ INSPECT_MODEL_SUFFIX = " on the "
 
 
 def to_list(value):
+    """Coerce a scalar or list-like input into a list of strings."""
+
     if isinstance(value, list):
         return [str(item) for item in value]
     if value is None:
@@ -24,6 +26,8 @@ def extract_model_names(
     report: dict,
     preferred_model_name: Optional[str] = None,
 ) -> List[str]:
+    """Extract and deduplicate model names from report fields."""
+
     model_names: List[str] = []
 
     if preferred_model_name:
@@ -73,6 +77,8 @@ def extract_model_names(
 
 
 def _infer_developer_from_models(model_names: List[str]) -> Optional[str]:
+    """Infer a canonical developer label from known model name patterns."""
+
     for model_name in model_names:
         normalized = model_name.lower()
         if "kimi" in normalized:
@@ -86,29 +92,71 @@ def _infer_developer_from_models(model_names: List[str]) -> Optional[str]:
     return None
 
 
+def _infer_deployer(
+    report: dict,
+    model_names: List[str],
+) -> Optional[str]:
+    """Infer deployer label from deployer values and model patterns."""
+
+    affects = report.get("affects", {})
+    deployer_values = to_list(affects.get("deployer"))
+
+    if any(
+        value.strip().lower().startswith("together/")
+        for value in deployer_values
+    ):
+        return "Together AI"
+
+    if any("gpt" in model.lower() for model in model_names):
+        return "OpenAI"
+
+    if any("openai" in value.lower() for value in deployer_values):
+        return "OpenAI"
+
+    return None
+
+
 def apply_model_developer_mapping(
     report: dict,
     model_names: Optional[List[str]] = None,
 ) -> bool:
+    """Normalize developer/deployer fields for a report when inference matches."""
+
     affects = report.setdefault("affects", {})
     if model_names is None:
         model_names = extract_model_names(report)
 
-    inferred = _infer_developer_from_models(model_names)
-    if inferred is None:
-        return False
+    inferred_developer = _infer_developer_from_models(model_names)
+    inferred_deployer = _infer_deployer(report, model_names)
 
-    affects["developer"] = [inferred]
-    deployer = to_list(affects.get("deployer"))
-    if not deployer:
-        affects["deployer"] = [inferred]
-    return True
+    updated = False
+
+    if inferred_developer is not None:
+        current_developer = to_list(affects.get("developer"))
+        if current_developer != [inferred_developer]:
+            affects["developer"] = [inferred_developer]
+            updated = True
+
+    if inferred_deployer is not None:
+        current_deployer = to_list(affects.get("deployer"))
+        if current_deployer != [inferred_deployer]:
+            affects["deployer"] = [inferred_deployer]
+            updated = True
+    elif inferred_developer is not None:
+        current_deployer = to_list(affects.get("deployer"))
+        if not current_deployer:
+            affects["deployer"] = [inferred_developer]
+            updated = True
+
+    return updated
 
 
 def apply_openai_system_artifact_type(
     report: dict,
     model_names: Optional[List[str]] = None,
 ) -> bool:
+    """Set artifact type to System for GPT/OpenAI-context report artifacts."""
+
     affects = report.setdefault("affects", {})
     artifacts = affects.get("artifacts")
     if not isinstance(artifacts, list):
@@ -152,6 +200,8 @@ def apply_enrich_normalizations(
     report: dict,
     preferred_model_name: Optional[str] = None,
 ) -> bool:
+    """Apply the default enrich normalization suite to a report."""
+
     model_names = extract_model_names(
         report,
         preferred_model_name=preferred_model_name,
@@ -171,6 +221,8 @@ def apply_review_normalizations(
     report: dict,
     preferred_model_name: Optional[str] = None,
 ) -> bool:
+    """Backward-compatible alias for enrich normalizations."""
+
     return apply_enrich_normalizations(
         report,
         preferred_model_name=preferred_model_name,
@@ -178,6 +230,8 @@ def apply_review_normalizations(
 
 
 def choose_model_subject_label(report: dict) -> str:
+    """Choose whether descriptions should refer to an LLM or AI system."""
+
     model_names = extract_model_names(report)
     if any(name.strip() for name in model_names):
         return "llm"

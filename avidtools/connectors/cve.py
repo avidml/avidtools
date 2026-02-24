@@ -1,3 +1,5 @@
+"""Connector utilities for importing and converting CVEs."""
+
 import nvdlib
 from datetime import datetime
 

@@ -1,13 +1,9 @@
-#!/usr/bin/env python3
+"""Garak-specific enrich helpers for AVID report JSON and JSONL files."""
 
-"""Garak-specific enrich script for AVID report JSON and JSONL files."""
-
-import argparse
 import asyncio
 import json
 import os
 import re
-import sys
 import time
 from pathlib import Path
 from typing import Dict, Optional
@@ -699,6 +695,8 @@ def _rebuild_text_descriptions(
 
 
 def _normalize_metric_results(report: dict):
+    """Normalize Garak metric payloads into a dict-compatible report shape."""
+
     metrics = report.get("metrics")
     if not isinstance(metrics, list) or not metrics:
         return
@@ -712,6 +710,7 @@ def _normalize_metric_results(report: dict):
         for row in results:
             if isinstance(row, dict):
                 row.pop("index", None)
+        first_metric["results"] = {"rows": results}
         return
 
     if not isinstance(results, dict) or not results:
@@ -738,7 +737,7 @@ def _normalize_metric_results(report: dict):
             row[column_name] = column_values.get(row_key)
         normalized_rows.append(row)
 
-    first_metric["results"] = normalized_rows
+    first_metric["results"] = {"rows": normalized_rows}
 
 
 def _extract_primary_model_developer_and_deployer(report: dict):
@@ -769,6 +768,8 @@ def _enrich_report(
     probe_summaries: Dict[str, str],
     module_behaviors: Dict[str, str],
 ):
+    """Apply Garak-specific enrich transforms to a single report."""
+
     preferred_model_name = _shorten_artifact_model_names(report)
     _apply_litellm_deployer_mapping(report)
     apply_enrich_normalizations(
@@ -886,56 +887,29 @@ def _save_reports(input_path: Path, reports, shape: str):
     raise ValueError(f"Unknown shape: {shape}")
 
 
-def main():
-    parser = argparse.ArgumentParser(
-        description="Enrich Garak reports and normalize input files in place."
+def enrich_file(
+    input_path: Path,
+    dry_run: bool = False,
+    cache_path: Path = CACHE_PATH,
+) -> int:
+    """Enrich a Garak JSON/JSONL input file and optionally rewrite in place."""
+
+    reports, shape = _load_reports(input_path)
+
+    probe_names = []
+    for report in reports:
+        probe_name = _extract_probe_name(report)
+        if probe_name:
+            probe_names.append(probe_name)
+
+    probe_summaries, module_behaviors = asyncio.run(
+        _get_probe_summaries_async(probe_names, cache_path)
     )
-    parser.add_argument(
-        "input_path",
-        type=Path,
-        help="Path to .json or .jsonl file",
-    )
-    parser.add_argument(
-        "--dry-run",
-        action="store_true",
-        help="Show enrich count without writing changes",
-    )
 
-    args = parser.parse_args()
+    for report in reports:
+        _enrich_report(report, probe_summaries, module_behaviors)
 
-    input_path = args.input_path.resolve()
-    if not input_path.exists() or not input_path.is_file():
-        print(f"ERROR: Input file does not exist: {input_path}")
-        sys.exit(1)
+    if not dry_run:
+        _save_reports(input_path, reports, shape)
 
-    try:
-        reports, shape = _load_reports(input_path)
-
-        probe_names = []
-        for report in reports:
-            probe_name = _extract_probe_name(report)
-            if probe_name:
-                probe_names.append(probe_name)
-
-        probe_summaries, module_behaviors = asyncio.run(
-            _get_probe_summaries_async(probe_names, CACHE_PATH)
-        )
-
-        for report in reports:
-            _enrich_report(report, probe_summaries, module_behaviors)
-
-        if not args.dry_run:
-            _save_reports(input_path, reports, shape)
-    except Exception as error:
-        print(f"ERROR: {error}")
-        sys.exit(1)
-
-    print(f"Enriched {len(reports)} report(s) in {input_path}")
-    if args.dry_run:
-        print("Dry run complete: no file changes were written")
-    else:
-        print("Saved normalized updates in place")
-
-
-if __name__ == "__main__":
-    main()
+    return len(reports)
