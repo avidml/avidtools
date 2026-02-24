@@ -5,7 +5,10 @@ from __future__ import annotations
 from typing import List, Optional
 
 
-INSPECT_MODEL_PREFIX = "Evaluation of the LLM "
+INSPECT_MODEL_PREFIXES = (
+    "Evaluation of the LLM ",
+    "Evaluation of the AI system ",
+)
 INSPECT_MODEL_SUFFIX = " on the "
 
 
@@ -48,18 +51,18 @@ def extract_model_names(
         .get("description", {})
         .get("value", "")
     )
-    if (
-        isinstance(problem_desc, str)
-        and problem_desc.startswith(INSPECT_MODEL_PREFIX)
-        and INSPECT_MODEL_SUFFIX in problem_desc
-    ):
-        model_name = (
-            problem_desc[len(INSPECT_MODEL_PREFIX):]
-            .split(INSPECT_MODEL_SUFFIX, 1)[0]
-            .strip()
-        )
-        if model_name:
-            model_names.append(model_name)
+    if isinstance(problem_desc, str) and INSPECT_MODEL_SUFFIX in problem_desc:
+        for inspect_prefix in INSPECT_MODEL_PREFIXES:
+            if not problem_desc.startswith(inspect_prefix):
+                continue
+            model_name = (
+                problem_desc[len(inspect_prefix):]
+                .split(INSPECT_MODEL_SUFFIX, 1)[0]
+                .strip()
+            )
+            if model_name:
+                model_names.append(model_name)
+            break
 
     deduped: List[str] = []
     seen = set()

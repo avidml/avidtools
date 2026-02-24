@@ -10,6 +10,7 @@ from avidtools.connectors.inspect import (
     import_eval_log,
     convert_eval_log,
     human_readable_name,
+    normalize_report_data,
     UnsupportedInspectBenchmarkError,
     _fetch_sections,
 )
@@ -248,3 +249,84 @@ class TestInspectConnector:
 
         with pytest.raises(UnsupportedInspectBenchmarkError):
             _fetch_sections("nonexistent_benchmark_slug")
+
+
+@patch("avidtools.connectors.inspect._fetch_sections")
+def test_normalize_report_data_sets_problemtype_ai_system_subject(
+    mock_fetch_sections,
+):
+    """Normalize should set AI system wording for system artifacts."""
+    mock_fetch_sections.return_value = (
+        "agentharm",
+        "Overview text.",
+        "Scoring text.",
+    )
+    report = {
+        "problemtype": {
+            "description": {
+                "lang": "eng",
+                "value": (
+                    "Evaluation of the LLM gpt-4o-mini-2024-07-18 on the "
+                    "agentharm benchmark using Inspect Evals"
+                ),
+            }
+        },
+        "affects": {
+            "developer": ["OpenAI"],
+            "deployer": ["OpenAI"],
+            "artifacts": [
+                {
+                    "type": "System",
+                    "name": "gpt-4o-mini-2024-07-18",
+                }
+            ],
+        },
+        "description": {"lang": "eng", "value": ""},
+    }
+
+    normalize_report_data(report)
+
+    assert report["problemtype"]["description"]["value"] == (
+        "Evaluation of the AI system gpt-4o-mini-2024-07-18 on the "
+        "agentharm benchmark using Inspect Evals"
+    )
+    assert "The AI system gpt-4o-mini-2024-07-18 was evaluated" in report[
+        "description"
+    ]["value"]
+
+
+@patch("avidtools.connectors.inspect._fetch_sections")
+def test_normalize_report_data_sets_problemtype_llm_subject(
+    mock_fetch_sections,
+):
+    """Normalize should keep LLM wording for model artifacts."""
+    mock_fetch_sections.return_value = (
+        "agentharm",
+        "Overview text.",
+        "Scoring text.",
+    )
+    report = {
+        "problemtype": {
+            "description": {
+                "lang": "eng",
+                "value": (
+                    "Evaluation of the LLM llama-3.1 on the "
+                    "agentharm benchmark using Inspect Evals"
+                ),
+            }
+        },
+        "affects": {
+            "developer": ["Meta"],
+            "deployer": ["Meta"],
+            "artifacts": [{"type": "Model", "name": "llama-3.1"}],
+        },
+        "description": {"lang": "eng", "value": ""},
+    }
+
+    normalize_report_data(report)
+
+    assert report["problemtype"]["description"]["value"] == (
+        "Evaluation of the LLM llama-3.1 on the "
+        "agentharm benchmark using Inspect Evals"
+    )
+    assert "The LLM llama-3.1 was evaluated" in report["description"]["value"]
