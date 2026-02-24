@@ -10,7 +10,6 @@ jobs:
     permissions:
       contents: write
       id-token: write
-      pull-requests: write
     
     steps:
       - name: Checkout repository
@@ -66,59 +65,17 @@ jobs:
             echo "✅ Version consistency check passed!"
           fi
 
-      - name: Create version update PR
+      - name: Align package version to release tag
         if: steps.version_check.outputs.version_mismatch == 'true'
         run: |
-          # Configure git
-          git config --global user.name 'github-actions[bot]'
-          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
-          
-          # Create new branch
-          BRANCH_NAME="update-version-to-${{ steps.version_check.outputs.tag_version }}"
-          git checkout -b "$BRANCH_NAME"
-          
-          # Update version in pyproject.toml
+          echo "🔧 Updating pyproject version for this release build..."
           poetry version "${{ steps.version_check.outputs.tag_version }}"
-          
-          # Commit changes
-          git add pyproject.toml
-          git commit -m "Update version to ${{ steps.version_check.outputs.tag_version }} to match release tag
-          
-          This automated commit updates the version in pyproject.toml to match the release tag ${{ github.event.release.tag_name }}.
-          
-          Previous version: ${{ steps.version_check.outputs.pyproject_version }}
-          New version: ${{ steps.version_check.outputs.tag_version }}"
-          
-          # Push branch
-          git push origin "$BRANCH_NAME"
-          
-          # Create PR
-          gh pr create \
-            --title "🔖 Update version to ${{ steps.version_check.outputs.tag_version }}" \
-            --body "## Version Update
-          
-          This PR automatically updates the version in \`pyproject.toml\` to match the release tag.
-          
-          **Changes:**
-          - Update version from \`${{ steps.version_check.outputs.pyproject_version }}\` to \`${{ steps.version_check.outputs.tag_version }}\`
-          
-          **Triggered by:** Release [${{ github.event.release.tag_name }}](${{ github.event.release.html_url }})
-          
-          **Note:** The PyPI publishing workflow has been paused until this version mismatch is resolved. Once this PR is merged, please re-run the publishing workflow or create a new release." \
-            --head "$BRANCH_NAME" \
-            --base main \
-            --label "automated" \
-            --label "version-update"
-        env:
-          GH_TOKEN: ${{ github.token }}
+          echo "✅ pyproject.toml now set to ${{ steps.version_check.outputs.tag_version }}"
 
-      - name: Stop workflow if version mismatch
-        if: steps.version_check.outputs.version_mismatch == 'true'
+      - name: Use existing package version
+        if: steps.version_check.outputs.version_mismatch == 'false'
         run: |
-          echo "❌ Stopping workflow due to version mismatch."
-          echo "A PR has been created to fix the version inconsistency."
-          echo "Please merge the PR and re-run this workflow or create a new release."
-          exit 1
+          echo "✅ Using pyproject version ${{ steps.version_check.outputs.pyproject_version }}"
 
       - name: Run tests
         run: poetry run pytest tests/ --cov=avidtools

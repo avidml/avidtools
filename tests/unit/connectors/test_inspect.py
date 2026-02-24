@@ -4,11 +4,14 @@ Unit tests for Inspect connector.
 
 import pytest
 from unittest.mock import Mock, patch
+from urllib.error import URLError
 
 from avidtools.connectors.inspect import (
     import_eval_log,
     convert_eval_log,
-    human_readable_name
+    human_readable_name,
+    UnsupportedInspectBenchmarkError,
+    _fetch_sections,
 )
 from avidtools.datamodels.report import Report
 from avidtools.datamodels.enums import ArtifactTypeEnum, ClassEnum, TypeEnum
@@ -221,3 +224,27 @@ class TestInspectConnector:
         assert report.affects.developer == ["Anthropic"]
         assert report.affects.deployer == ["anthropic/claude-3"]
         assert report.affects.artifacts[0].name == "claude-3"
+
+    @patch('avidtools.connectors.inspect.enrich_report_data')
+    @patch('avidtools.connectors.inspect.import_eval_log')
+    def test_convert_eval_log_with_enrich_enabled(
+        self,
+        mock_import,
+        mock_enrich,
+    ):
+        """Enrich mode should call enrich_report_data for each sample."""
+        mock_eval_log = MockEvalLog()
+        mock_import.return_value = mock_eval_log
+
+        reports = convert_eval_log("/path/to/eval.json", enrich=True)
+
+        assert len(reports) == 1
+        assert mock_enrich.call_count == 1
+
+    @patch('avidtools.connectors.inspect.urlopen')
+    def test_fetch_sections_raises_on_unresolved_benchmark(self, mock_urlopen):
+        """Unresolvable benchmark should raise UnsupportedInspectBenchmarkError."""
+        mock_urlopen.side_effect = URLError("network unavailable")
+
+        with pytest.raises(UnsupportedInspectBenchmarkError):
+            _fetch_sections("nonexistent_benchmark_slug")
