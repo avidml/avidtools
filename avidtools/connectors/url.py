@@ -386,7 +386,10 @@ Important guidelines:
             avid_taxonomy = AvidTaxonomy(
                 risk_domain=avid_data["risk_domain"],
                 sep_view=[SepEnum(s) for s in avid_data["sep_view"]],
-                lifecycle_view=[LifecycleEnum(l) for l in avid_data["lifecycle_view"]],
+                lifecycle_view=[
+                    LifecycleEnum(stage)
+                    for stage in avid_data["lifecycle_view"]
+                ],
                 taxonomy_version=avid_data["taxonomy_version"],
             )
 

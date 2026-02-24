@@ -2,7 +2,7 @@
 Component data classes used in AVID report and vulnerability datamodels.
 """
 
-from typing import Any, Dict, List, Optional
+from typing import Dict, List, Optional
 from pydantic import BaseModel
 
 from .enums import (
