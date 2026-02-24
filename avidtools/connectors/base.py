@@ -15,7 +15,7 @@ def _enrich_report(report: dict) -> None:
 def process_json_file(
     input_path: Path,
     dry_run: bool,
-):
+) -> int:
     """Enrich a JSON file containing one report object or a list of reports."""
 
     with input_path.open("r", encoding="utf-8") as file_obj:
@@ -49,7 +49,7 @@ def process_json_file(
 def process_jsonl_file(
     input_path: Path,
     dry_run: bool,
-):
+) -> int:
     """Enrich each report object in a JSONL file."""
 
     reports_enriched = 0

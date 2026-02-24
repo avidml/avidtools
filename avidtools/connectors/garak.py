@@ -480,7 +480,7 @@ def _summarize_probe_summary_parts_via_openai_http(
 
 
 async def _get_probe_summaries_async(
-    probe_names,
+    probe_names: list[str],
     cache_path: Path,
 ) -> tuple[Dict[str, str], Dict[str, str]]:
     cache_bundle = _load_probe_summary_cache(cache_path)
@@ -521,7 +521,7 @@ async def _get_probe_summaries_async(
         }
     )
 
-    probe_by_module = {}
+    probe_by_module: Dict[str, str] = {}
     for probe_name in unresolved:
         module_name = _module_name_from_probe(probe_name)
         probe_by_module.setdefault(module_name, probe_name)
@@ -562,7 +562,7 @@ async def _get_probe_summaries_async(
     )
 
     for result in module_results:
-        if isinstance(result, Exception):
+        if not isinstance(result, tuple):
             continue
         module_name, behavior = result
         if behavior:
@@ -588,7 +588,7 @@ async def _get_probe_summaries_async(
     )
 
     for result in results:
-        if isinstance(result, Exception):
+        if not isinstance(result, tuple):
             continue
         probe_name, summary = result
         probe_cache[probe_name] = _extract_probe_summary_core(summary)
@@ -719,7 +719,7 @@ def _normalize_metric_results(report: dict):
     if not all(isinstance(value, dict) for value in results.values()):
         return
 
-    row_keys = set()
+    row_keys: set[str] = set()
     for column_values in results.values():
         row_keys.update(str(key) for key in column_values.keys())
 

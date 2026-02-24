@@ -1,3 +1,3 @@
 """Connectors for AVID data sources."""
 
-__all__ = []
+__all__: list[str] = []
