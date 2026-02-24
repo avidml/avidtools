@@ -196,11 +196,11 @@ def apply_openai_system_artifact_type(
     return updated
 
 
-def apply_enrich_normalizations(
+def apply_normalizations(
     report: dict,
     preferred_model_name: Optional[str] = None,
 ) -> bool:
-    """Apply the default enrich normalization suite to a report."""
+    """Apply the default normalization suite to a report."""
 
     model_names = extract_model_names(
         report,
@@ -221,9 +221,9 @@ def apply_review_normalizations(
     report: dict,
     preferred_model_name: Optional[str] = None,
 ) -> bool:
-    """Backward-compatible alias for enrich normalizations."""
+    """Backward-compatible alias for default normalizations."""
 
-    return apply_enrich_normalizations(
+    return apply_normalizations(
         report,
         preferred_model_name=preferred_model_name,
     )

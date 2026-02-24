@@ -1,31 +1,31 @@
-"""Generic enrich helpers for AVID report JSON and JSONL files."""
+"""Generic normalize helpers for AVID report JSON and JSONL files."""
 
 import json
 from pathlib import Path
 
-from .utils import apply_enrich_normalizations
+from .utils import apply_normalizations
 
 
-def _enrich_report(report: dict) -> None:
-    """Apply generic enrich normalizations to a single report dict."""
+def _normalize_report(report: dict) -> None:
+    """Apply generic normalizations to a single report dict."""
 
-    apply_enrich_normalizations(report)
+    apply_normalizations(report)
 
 
 def process_json_file(
     input_path: Path,
     dry_run: bool,
 ) -> int:
-    """Enrich a JSON file containing one report object or a list of reports."""
+    """Normalize a JSON file containing one report object or a list of reports."""
 
     with input_path.open("r", encoding="utf-8") as file_obj:
         payload = json.load(file_obj)
 
-    reports_enriched = 0
+    reports_normalized = 0
 
     if isinstance(payload, dict):
-        _enrich_report(payload)
-        reports_enriched += 1
+        _normalize_report(payload)
+        reports_normalized += 1
     elif isinstance(payload, list):
         for index, report in enumerate(payload, 1):
             if not isinstance(report, dict):
@@ -33,8 +33,8 @@ def process_json_file(
                     "Invalid item at index "
                     f"{index} in JSON list: expected object"
                 )
-            _enrich_report(report)
-            reports_enriched += 1
+            _normalize_report(report)
+            reports_normalized += 1
     else:
         raise ValueError("Unsupported JSON structure: expected object or list")
 
@@ -43,17 +43,17 @@ def process_json_file(
             json.dump(payload, file_obj, indent=2)
             file_obj.write("\n")
 
-    return reports_enriched
+    return reports_normalized
 
 
 def process_jsonl_file(
     input_path: Path,
     dry_run: bool,
 ) -> int:
-    """Enrich each report object in a JSONL file."""
+    """Normalize each report object in a JSONL file."""
 
-    reports_enriched = 0
-    enriched_lines = []
+    reports_normalized = 0
+    normalized_lines = []
 
     with input_path.open("r", encoding="utf-8") as file_obj:
         for line_num, line in enumerate(file_obj, 1):
@@ -73,20 +73,20 @@ def process_jsonl_file(
                     f"Invalid JSON object on line {line_num}: expected object"
                 )
 
-            _enrich_report(report)
-            reports_enriched += 1
-            enriched_lines.append(json.dumps(report, ensure_ascii=False))
+            _normalize_report(report)
+            reports_normalized += 1
+            normalized_lines.append(json.dumps(report, ensure_ascii=False))
 
     if not dry_run:
         with input_path.open("w", encoding="utf-8") as file_obj:
-            if enriched_lines:
-                file_obj.write("\n".join(enriched_lines) + "\n")
+            if normalized_lines:
+                file_obj.write("\n".join(normalized_lines) + "\n")
 
-    return reports_enriched
+    return reports_normalized
 
 
-def enrich_file(input_path: Path, dry_run: bool = False) -> int:
-    """Dispatch enrich processing based on input file extension."""
+def normalize_file(input_path: Path, dry_run: bool = False) -> int:
+    """Dispatch normalize processing based on input file extension."""
 
     if input_path.suffix == ".json":
         return process_json_file(input_path, dry_run)

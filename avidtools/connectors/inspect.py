@@ -1,4 +1,4 @@
-"""Connector helpers for converting and enriching Inspect evaluation reports."""
+"""Connector helpers for converting and normalizing Inspect evaluation reports."""
 
 import json
 import re
@@ -78,15 +78,15 @@ def import_eval_log(file_path: str) -> Any:
     return read_eval_log(file_path)
 
 
-def convert_eval_log(file_path: str, enrich: bool = False) -> List[Report]:
+def convert_eval_log(file_path: str, normalize: bool = False) -> List[Report]:
     """Convert an Inspect evaluation log into a list of AVID Report objects.
 
     Parameters
     ----------
     file_path : str
         Path to the evaluation log file (.eval or .json).
-    enrich : bool
-        If True, run enrich steps that fetch benchmark overview/scoring
+    normalize : bool
+        If True, run normalize steps that fetch benchmark overview/scoring
         and apply report normalizations.
 
     Returns
@@ -166,13 +166,13 @@ def convert_eval_log(file_path: str, enrich: bool = False) -> List[Report]:
         )
         report.description = LangValue(lang="eng", value=full_description)
 
-        if enrich:
+        if normalize:
             report_payload = (
                 report.model_dump()
                 if hasattr(report, "model_dump")
                 else report.dict()
             )
-            enrich_report_data(report_payload)
+            normalize_report_data(report_payload)
             report = Report(**report_payload)
 
         reports.append(report)
@@ -321,7 +321,7 @@ def _build_new_description(
     overview: str,
     scoring: str,
 ) -> str:
-    """Build standardized enriched report description text."""
+    """Build standardized normalized report description text."""
 
     return (
         f"{overview}\n\n"
@@ -341,8 +341,8 @@ def _first_line(text: str) -> str:
     return ""
 
 
-def enrich_report_data(report: dict):
-    """Apply Inspect enrich transformations to a report dictionary."""
+def normalize_report_data(report: dict):
+    """Apply Inspect normalize transformations to a report dictionary."""
 
     problem_desc = (
         report.get("problemtype", {})
@@ -375,12 +375,12 @@ def enrich_report_data(report: dict):
 
 
 def process_report(file_path: Path):
-    """Load, enrich, and rewrite a single Inspect report file."""
+    """Load, normalize, and rewrite a single Inspect report file."""
 
     with file_path.open("r", encoding="utf-8") as file_obj:
         report = json.load(file_obj)
 
-    enrich_report_data(report)
+    normalize_report_data(report)
 
     with file_path.open("w", encoding="utf-8") as file_obj:
         json.dump(report, file_obj, indent=2)

@@ -1,9 +1,9 @@
-"""Unit tests for enrich normalization utilities."""
+"""Unit tests for normalization utilities."""
 
-from avidtools.connectors.utils import apply_enrich_normalizations
+from avidtools.connectors.utils import apply_normalizations
 
 
-def test_apply_enrich_normalizations_sets_openai_deployer_for_gpt_model():
+def test_apply_normalizations_sets_openai_deployer_for_gpt_model():
     """GPT model artifacts should normalize deployer to OpenAI."""
     report = {
         "affects": {
@@ -14,14 +14,14 @@ def test_apply_enrich_normalizations_sets_openai_deployer_for_gpt_model():
         "problemtype": {"description": {"value": ""}},
     }
 
-    updated = apply_enrich_normalizations(report)
+    updated = apply_normalizations(report)
 
     assert updated is True
     assert report["affects"]["deployer"] == ["OpenAI"]
     assert report["affects"]["artifacts"][0]["type"] == "System"
 
 
-def test_apply_enrich_normalizations_sets_together_ai_deployer():
+def test_apply_normalizations_sets_together_ai_deployer():
     """Together-prefixed deployers should normalize to Together AI."""
     report = {
         "affects": {
@@ -32,7 +32,7 @@ def test_apply_enrich_normalizations_sets_together_ai_deployer():
         "problemtype": {"description": {"value": ""}},
     }
 
-    updated = apply_enrich_normalizations(report)
+    updated = apply_normalizations(report)
 
     assert updated is True
     assert report["affects"]["deployer"] == ["Together AI"]

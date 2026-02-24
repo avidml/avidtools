@@ -1,4 +1,4 @@
-"""Garak-specific enrich helpers for AVID report JSON and JSONL files."""
+"""Garak-specific normalize helpers for AVID report JSON and JSONL files."""
 
 import asyncio
 import json
@@ -11,7 +11,7 @@ from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
 
 from .utils import (
-    apply_enrich_normalizations,
+    apply_normalizations,
     choose_model_subject_label,
     to_list,
 )
@@ -252,7 +252,7 @@ def _fetch_probe_reference_text(probe_name: str) -> Optional[str]:
     _, reference_url = _probe_urls(probe_name)
     request = Request(
         reference_url,
-        headers={"User-Agent": "avid-db-garak-enrich/1.0"},
+        headers={"User-Agent": "avid-db-garak-normalize/1.0"},
     )
     try:
         with urlopen(request, timeout=30) as response:
@@ -763,16 +763,16 @@ def _extract_primary_model_developer_and_deployer(report: dict):
     return model_name, developer_name, deployer_name
 
 
-def _enrich_report(
+def _normalize_report(
     report: dict,
     probe_summaries: Dict[str, str],
     module_behaviors: Dict[str, str],
 ):
-    """Apply Garak-specific enrich transforms to a single report."""
+    """Apply Garak-specific normalize transforms to a single report."""
 
     preferred_model_name = _shorten_artifact_model_names(report)
     _apply_litellm_deployer_mapping(report)
-    apply_enrich_normalizations(
+    apply_normalizations(
         report,
         preferred_model_name=preferred_model_name,
     )
@@ -887,12 +887,12 @@ def _save_reports(input_path: Path, reports, shape: str):
     raise ValueError(f"Unknown shape: {shape}")
 
 
-def enrich_file(
+def normalize_file(
     input_path: Path,
     dry_run: bool = False,
     cache_path: Path = CACHE_PATH,
 ) -> int:
-    """Enrich a Garak JSON/JSONL input file and optionally rewrite in place."""
+    """Normalize a Garak JSON/JSONL input file and optionally rewrite in place."""
 
     reports, shape = _load_reports(input_path)
 
@@ -907,7 +907,7 @@ def enrich_file(
     )
 
     for report in reports:
-        _enrich_report(report, probe_summaries, module_behaviors)
+        _normalize_report(report, probe_summaries, module_behaviors)
 
     if not dry_run:
         _save_reports(input_path, reports, shape)
