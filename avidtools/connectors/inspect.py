@@ -51,7 +51,7 @@ CYSE2_URL = (
     "cybersecurity/cyberseceval_2/"
 )
 PATTERN = re.compile(
-    r"^Evaluation of the LLM (.+?) on the (.+?) benchmark using Inspect Evals$"
+    r"^Evaluation of the (?:LLM|AI system) (.+?) on the (.+?) benchmark using Inspect Evals$"
 )
 CATEGORY_CANDIDATES = ("safeguards", "scheming", "bias", "cybersecurity")
 
@@ -335,6 +335,20 @@ def _build_new_description(
     )
 
 
+def _build_problemtype_description(
+    model_name: str,
+    benchmark: str,
+    subject_label: str,
+) -> str:
+    """Build standardized problemtype.description.value text."""
+
+    subject_label_display = "LLM" if subject_label == "llm" else "AI system"
+    return (
+        f"Evaluation of the {subject_label_display} {model_name} "
+        f"on the {benchmark} benchmark using Inspect Evals"
+    )
+
+
 def _first_line(text: str) -> str:
     """Return the first non-empty line from a text block."""
 
@@ -357,7 +371,8 @@ def normalize_report_data(report: dict):
     if not match:
         raise ValueError(
             "problemtype.description.value is not in expected format: "
-            "Evaluation of the LLM $X on the $Y benchmark using Inspect Evals"
+            "Evaluation of the (LLM|AI system) $X on the $Y benchmark using "
+            "Inspect Evals"
         )
 
     model_name = match.group(1)
@@ -368,6 +383,18 @@ def normalize_report_data(report: dict):
     _, overview, scoring = _fetch_sections(benchmark)
     overview = _first_line(overview)
     subject_label = choose_model_subject_label(report)
+
+    problemtype_description = report.setdefault("problemtype", {}).setdefault(
+        "description",
+        {},
+    )
+    problemtype_description["value"] = _build_problemtype_description(
+        model_name=model_name,
+        benchmark=benchmark,
+        subject_label=subject_label,
+    )
+    if "lang" not in problemtype_description:
+        problemtype_description["lang"] = "eng"
 
     description = report.setdefault("description", {})
     description["value"] = _build_new_description(
