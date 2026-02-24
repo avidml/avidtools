@@ -5,7 +5,7 @@ URL connector for AVID that scrapes web content and uses an AI agent to create A
 import os
 import json
 from datetime import date
-from typing import Optional
+from typing import Any, Optional
 import requests
 from bs4 import BeautifulSoup
 from openai import OpenAI, AsyncOpenAI
@@ -80,7 +80,11 @@ class URLConnector:
                 script.decompose()
 
             # Get title
-            title = soup.title.string if soup.title else ""
+            title = (
+                soup.title.string
+                if soup.title and soup.title.string
+                else ""
+            )
 
             # Get main text content
             text = soup.get_text(separator="\n", strip=True)
@@ -242,7 +246,7 @@ Important guidelines:
 """
         return prompt
 
-    def _parse_ai_response(self, response_text: str) -> dict:
+    def _parse_ai_response(self, response_text: str) -> dict[str, Any]:
         """
         Parse the AI response and extract JSON.
 
@@ -270,7 +274,12 @@ Important guidelines:
             text = "\n".join(lines)
 
         try:
-            return json.loads(text)
+            parsed = json.loads(text)
+            if not isinstance(parsed, dict):
+                raise ValueError(
+                    "AI response JSON must be an object at top level"
+                )
+            return parsed
         except json.JSONDecodeError as e:
             raise ValueError(f"Failed to parse AI response as JSON: {str(e)}\nResponse: {text}")
 
@@ -377,7 +386,10 @@ Important guidelines:
             avid_taxonomy = AvidTaxonomy(
                 risk_domain=avid_data["risk_domain"],
                 sep_view=[SepEnum(s) for s in avid_data["sep_view"]],
-                lifecycle_view=[LifecycleEnum(l) for l in avid_data["lifecycle_view"]],
+                lifecycle_view=[
+                    LifecycleEnum(stage)
+                    for stage in avid_data["lifecycle_view"]
+                ],
                 taxonomy_version=avid_data["taxonomy_version"],
             )
 
@@ -456,7 +468,7 @@ Important guidelines:
                     max_tokens=4000,
                 )
 
-                ai_response = response.choices[0].message.content
+                ai_response = response.choices[0].message.content or ""
                 print(f"AI response received ({len(ai_response)} characters)")
 
                 # Step 4: Parse AI response
@@ -479,6 +491,8 @@ Important guidelines:
                     )
             except Exception as e:
                 raise RuntimeError(f"Error creating report: {str(e)}")
+
+        raise RuntimeError("Failed to create report: exhausted retries")
 
 
 def fetch_and_convert(url: str, api_key: Optional[str] = None, model: str = "gpt-4o-mini") -> Report:

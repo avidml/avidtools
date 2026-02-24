@@ -1,3 +1,5 @@
+"""Connector utilities for importing and converting MITRE ATLAS data."""
+
 import requests
 import yaml
 import re

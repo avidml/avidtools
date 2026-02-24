@@ -21,3 +21,9 @@ From inside this directory, run the following to install the latest development 
 ```
 pip install -e .
 ```
+
+## Release behavior
+
+- On GitHub release publish, CI runs tests/lint/type checks before publishing to PyPI.
+- The publish workflow compares the release tag version with `pyproject.toml`.
+- If they differ, it automatically aligns the package version to the release tag during the workflow run, then continues build and publish.
