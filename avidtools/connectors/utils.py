@@ -232,18 +232,27 @@ def apply_review_normalizations(
 def choose_model_subject_label(report: dict) -> str:
     """Choose whether descriptions should refer to an LLM or AI system."""
 
-    model_names = extract_model_names(report)
-    if any(name.strip() for name in model_names):
-        return "llm"
-
     affects = report.get("affects", {})
     artifacts = affects.get("artifacts")
     if isinstance(artifacts, list):
+        has_system_artifact = False
+        has_model_artifact = False
         for artifact in artifacts:
             if not isinstance(artifact, dict):
                 continue
             artifact_type = str(artifact.get("type", "")).strip().lower()
-            if artifact_type in {"model", "llm", "language model"}:
-                return "llm"
+            if artifact_type == "system":
+                has_system_artifact = True
+            elif artifact_type in {"model", "llm", "language model"}:
+                has_model_artifact = True
+
+        if has_system_artifact and not has_model_artifact:
+            return "AI system"
+        if has_model_artifact:
+            return "llm"
+
+    model_names = extract_model_names(report)
+    if any(name.strip() for name in model_names):
+        return "llm"
 
     return "AI system"
