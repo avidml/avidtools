@@ -1,17 +1,16 @@
-from setuptools import setup
+from setuptools import find_packages, setup
   
 setup(
     name='avidtools',
-    version='0.1',
+    version='0.2.0',
     description='Developer tools for AVID',
     author='Subho Majumdar',
-    author_email='avid.mldb@gmail.com',
-    packages=['avidtools'],
+    author_email='info@avidml.org',
+    packages=find_packages(exclude=['.']),
+    python_requires='>=3.12',
     install_requires=[
-        'pydantic',
-#         'enum',
-        'typing',
-        'typing_extensions',
-        'datetime'
+        'pydantic>=2.11.5',
+        'typing-extensions>=4.13.2',
+        'nvdlib>=0.8.1'
     ],
 )

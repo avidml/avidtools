@@ -1,0 +1,674 @@
+<!DOCTYPE html>
+<html data-theme="dark" lang="en-US">
+  <head>
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <meta name="csrf-param" content="authenticity_token" />
+<meta name="csrf-token" content="7PoRp2AZEcC0qveHu8qRFGtfjVsYp5fNOwoU6oc4zq42UreLVvd-eNXAYlkP4nEPgw0p2Zp3_p2KSb809JuXVA" />
+    
+    <title id="page-title">0x78819949: OpenAI DALL-E3 Guardrail Jailbreak via &quot;Feminist | 0din.ai</title>
+<meta name="description" content="We are building for the next generation in GenAI security and beyond.">
+<meta name="keywords" content="ai, genai, bug bounty, bug bounty program">
+<meta property="og:site_name" content="0din.ai">
+<meta property="og:title" content="The GenAI Bug Bounty Program">
+<meta property="og:description" content="We are building for the next generation in GenAI security and beyond.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://0din.ai/disclosures/78819949-0069-4cdb-817e-70957ffd2293">
+<meta property="og:image" content="https://0din.ai/assets/0dinbanner-a7dcc211.png">
+    <link rel="stylesheet" href="/assets/tailwind-e06e720f.css" data-turbo-track="reload" />
+    <meta name="turbo-refresh-method" content="morph">
+    <link rel="icon" type="image/x-icon" href="/assets/favicon-f34f87c1.ico" />
+    <script type="importmap" data-turbo-track="reload">{
+  "imports": {
+    "application": "/assets/application-26a8f8a6.js",
+    "@hotwired/stimulus": "/assets/stimulus.min-4b1e420e.js",
+    "@hotwired/stimulus-loading": "/assets/stimulus-loading-1fc53fe7.js",
+    "@hotwired/turbo-rails": "/assets/turbo.min-3a2e143f.js",
+    "utils": "/assets/utils-8f5832e3.js",
+    "activestorage": "/assets/activestorage.esm-f2909226.js",
+    "choices.js": "/assets/choices.js-334bdca7.js",
+    "glightbox": "/assets/glightbox-3568dae9.js",
+    "dropzone": "/assets/dropzone-38e9888e.js",
+    "just-extend": "/assets/just-extend-04c31d13.js",
+    "easymde": "/assets/easymde.min-8a78f887.js",
+    "echarts": "/assets/echarts-fc5dad9c.js",
+    "@rails/actioncable": "/assets/actioncable.esm-e0ec9819.js",
+    "controllers/_base_echarts_controller": "/assets/controllers/_base_echarts_controller-974a7995.js",
+    "controllers/application": "/assets/controllers/application-3f3d5175.js",
+    "controllers/attack_controller": "/assets/controllers/attack_controller-0972adb5.js",
+    "controllers/autofocus_controller": "/assets/controllers/autofocus_controller-dd760bfb.js",
+    "controllers/blog_search_controller": "/assets/controllers/blog_search_controller-87e5bf30.js",
+    "controllers/clipboard_controller": "/assets/controllers/clipboard_controller-4cdbcbe6.js",
+    "controllers/dropzone_controller": "/assets/controllers/dropzone_controller-17d6a289.js",
+    "controllers/flash_controller": "/assets/controllers/flash_controller-a213900c.js",
+    "controllers/gallery_controller": "/assets/controllers/gallery_controller-1ed6f200.js",
+    "controllers/generate_button_controller": "/assets/controllers/generate_button_controller-f2ea3b7a.js",
+    "controllers": "/assets/controllers/index-6c34aebc.js",
+    "controllers/invoice_overview_charts_controller": "/assets/controllers/invoice_overview_charts_controller-20da3233.js",
+    "controllers/jef_calculator_controller": "/assets/controllers/jef_calculator_controller-b5a27b07.js",
+    "controllers/lazy_image_controller": "/assets/controllers/lazy_image_controller-4730b89f.js",
+    "controllers/llm_summary_controller": "/assets/controllers/llm_summary_controller-3d4fe0a7.js",
+    "controllers/markdown_controller": "/assets/controllers/markdown_controller-776a954b.js",
+    "controllers/messages_controller": "/assets/controllers/messages_controller-cc1c7fff.js",
+    "controllers/mobile_menu_controller": "/assets/controllers/mobile_menu_controller-2a69f276.js",
+    "controllers/model_card_controller": "/assets/controllers/model_card_controller-2a929ca8.js",
+    "controllers/notification_controller": "/assets/controllers/notification_controller-48c5850d.js",
+    "controllers/nsfw_modal_controller": "/assets/controllers/nsfw_modal_controller-a72365f6.js",
+    "controllers/password_controller": "/assets/controllers/password_controller-f83fbd63.js",
+    "controllers/policy_controller": "/assets/controllers/policy_controller-fd339676.js",
+    "controllers/presence_controller": "/assets/controllers/presence_controller-38ac272a.js",
+    "controllers/preview_collapse_controller": "/assets/controllers/preview_collapse_controller-f2f87399.js",
+    "controllers/profile_charts_controller": "/assets/controllers/profile_charts_controller-ed5af8b4.js",
+    "controllers/redirect_event_controller": "/assets/controllers/redirect_event_controller-a5d5f6cf.js",
+    "controllers/scope_pricing_controller": "/assets/controllers/scope_pricing_controller-ae5f2cf6.js",
+    "controllers/scroll_bottom_activate_controller": "/assets/controllers/scroll_bottom_activate_controller-4c07fe4f.js",
+    "controllers/slider_controller": "/assets/controllers/slider_controller-3fd4e995.js",
+    "controllers/tabs_controller": "/assets/controllers/tabs_controller-3c058210.js",
+    "controllers/taxonomy_filter_controller": "/assets/controllers/taxonomy_filter_controller-9c5844bf.js",
+    "controllers/taxonomy_form_controller": "/assets/controllers/taxonomy_form_controller-0f0e2810.js",
+    "controllers/threat_feeds_controller": "/assets/controllers/threat_feeds_controller-2eec31b2.js",
+    "controllers/threat_feeds_table_controller": "/assets/controllers/threat_feeds_table_controller-c77bc876.js",
+    "controllers/update_collapse_controller": "/assets/controllers/update_collapse_controller-13a03fe8.js",
+    "controllers/user_form_controller": "/assets/controllers/user_form_controller-578680b3.js",
+    "controllers/user_group_controller": "/assets/controllers/user_group_controller-19c8f283.js",
+    "controllers/vendor_preview_controller": "/assets/controllers/vendor_preview_controller-7c86609b.js",
+    "controllers/vulnerability_comments_controller": "/assets/controllers/vulnerability_comments_controller-8dad7300.js",
+    "controllers/vulnerability_comments_form_controller": "/assets/controllers/vulnerability_comments_form_controller-d235d8bc.js",
+    "controllers/vulnerability_form_controller": "/assets/controllers/vulnerability_form_controller-71b4a7e4.js",
+    "controllers/vulnerability_search_controller": "/assets/controllers/vulnerability_search_controller-8f0262a7.js",
+    "controllers/vulnerability_taxonomy_triplet_form_controller": "/assets/controllers/vulnerability_taxonomy_triplet_form_controller-74edebea.js",
+    "controllers/welcome_banner_controller": "/assets/controllers/welcome_banner_controller-514916a5.js"
+  }
+}</script>
+<link rel="modulepreload" href="/assets/application-26a8f8a6.js">
+<link rel="modulepreload" href="/assets/stimulus.min-4b1e420e.js">
+<link rel="modulepreload" href="/assets/stimulus-loading-1fc53fe7.js">
+<link rel="modulepreload" href="/assets/turbo.min-3a2e143f.js">
+<link rel="modulepreload" href="/assets/actioncable.esm-e0ec9819.js">
+<script type="module">import "application"</script>
+
+      <script async src="https://www.googletagmanager.com/gtag/js?id=G-GQY604KVC1"></script>
+  <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-GQY604KVC1');
+  </script>
+
+  <script type="text/javascript">
+      (function(c,l,a,r,i,t,y){
+          c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
+          t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
+          y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
+      })(window, document, "clarity", "script", "twtfdk8ndy");
+  </script>
+
+
+    
+  </head>
+
+  <body class="">
+    <a href="#main-content" class="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-50 focus:px-4 focus:py-2 focus:bg-primary focus:text-black focus:rounded">
+      Skip to main content
+    </a>
+    <nav class="bg-transparent" aria-label="Main navigation">
+  <div class="mx-10 py-5">
+    <div class="flex h-16 items-center justify-between relative z-20">
+      <div class="flex items-center">
+        <a class="hidden md:block" href="/">
+          <img class="h-6 w-auto" alt="0DIN Logo" src="/assets/logos/0DIN-Logo-White-8190f148.svg" />
+</a>        <a class="md:hidden" href="/">
+          <img class="h-6 w-auto" alt="0DIN Logo" src="/assets/logos/0DIN-Logo-White-8190f148.svg" />
+</a>      </div>
+
+      <div class="hidden lg:flex items-center md:justify-center lg:justify-end md:flex-1 lg:flex-none xl:space-x-8 space-x-4 md:text-md lg:text-lg font-semibold">
+        <div class="dropdown">
+  <div tabindex="0" role="button" class="flex items-center text-white hover:text-gray-300 hover:underline transition-all cursor-pointer">
+    Products
+  </div>
+
+  <div tabindex="0" class="dropdown-content menu mt-2 min-w-64 bg-zinc-800 border border-zinc-700 rounded-xl shadow-[0px_4px_6px_-4px_rgba(0,0,0,0.1),0px_10px_15px_-3px_rgba(0,0,0,0.1)] z-50">
+    <div class="p-1">
+        <a class="block w-full px-4 py-2 rounded-lg hover:bg-[#1F1F20] transition-colors" role="menuitem" data-turbo-frame="_top" href="/marketing/bug_bounty">
+          <div class="text-white text-sm leading-5 whitespace-nowrap">
+            0DIN Bounty
+          </div>
+          <div class="text-zinc-400 text-xs font-normal leading-4 mt-0.5">
+            Submit vulnerabilities and earn rewards
+          </div>
+</a>        <a class="block w-full px-4 py-2 rounded-lg hover:bg-[#1F1F20] transition-colors" role="menuitem" data-turbo-frame="_top" href="/marketing/scanner">
+          <div class="text-white text-sm leading-5 whitespace-nowrap">
+            0DIN Scanner
+          </div>
+          <div class="text-zinc-400 text-xs font-normal leading-4 mt-0.5">
+            Monitor &amp; analyze GenAI vulnerabilities
+          </div>
+</a>        <a class="block w-full px-4 py-2 rounded-lg hover:bg-[#1F1F20] transition-colors" role="menuitem" data-turbo-frame="_top" href="/marketing/threat_intel">
+          <div class="text-white text-sm leading-5 whitespace-nowrap">
+            0DIN Intel
+          </div>
+          <div class="text-zinc-400 text-xs font-normal leading-4 mt-0.5">
+            Real-time intelligence on emerging threats
+          </div>
+</a>    </div>
+  </div>
+</div>
+
+
+        <a class="text-white hover:text-gray-300 hover:underline transition-all" data-turbo-frame="_top" href="/disclosures">Disclosures</a>
+
+        <a class="text-white hover:text-gray-300 hover:underline transition-all" data-turbo-frame="_top" href="/leaderboard">Leaderboard</a>
+
+        <a class="text-white hover:text-gray-300 hover:underline transition-all" data-turbo-frame="_top" href="/blog">Blog</a>
+
+        <div class="dropdown">
+  <div tabindex="0" role="button" class="flex items-center text-white hover:text-gray-300 hover:underline transition-all cursor-pointer">
+    Research
+  </div>
+
+  <div tabindex="0" class="dropdown-content menu mt-2 min-w-64 bg-zinc-800 border border-zinc-700 rounded-xl shadow-[0px_4px_6px_-4px_rgba(0,0,0,0.1),0px_10px_15px_-3px_rgba(0,0,0,0.1)] z-50">
+    <div class="p-1">
+        <a class="block w-full px-4 py-2 rounded-lg hover:bg-[#1F1F20] transition-colors" role="menuitem" data-turbo-frame="_top" href="/research">
+          <div class="text-white text-sm leading-5 whitespace-nowrap">
+            Overview
+          </div>
+          <div class="text-zinc-400 text-xs font-normal leading-4 mt-0.5">
+            Research program overview
+          </div>
+</a>        <a class="block w-full px-4 py-2 rounded-lg hover:bg-[#1F1F20] transition-colors" role="menuitem" data-turbo-frame="_top" href="/research/jailbreak_evaluation_framework">
+          <div class="text-white text-sm leading-5 whitespace-nowrap">
+            Jailbreak Evaluation Framework
+          </div>
+          <div class="text-zinc-400 text-xs font-normal leading-4 mt-0.5">
+            Comprehensive testing methodology
+          </div>
+</a>        <a class="block w-full px-4 py-2 rounded-lg hover:bg-[#1F1F20] transition-colors" role="menuitem" data-turbo-frame="_top" href="/research/taxonomy">
+          <div class="text-white text-sm leading-5 whitespace-nowrap">
+            Jailbreak Taxonomy
+          </div>
+          <div class="text-zinc-400 text-xs font-normal leading-4 mt-0.5">
+            Classification system for AI vulnerabilities
+          </div>
+</a>        <a class="block w-full px-4 py-2 rounded-lg hover:bg-[#1F1F20] transition-colors" role="menuitem" data-turbo-frame="_top" href="/research/vendor_cards">
+          <div class="text-white text-sm leading-5 whitespace-nowrap">
+            LLM Model Cards
+          </div>
+          <div class="text-zinc-400 text-xs font-normal leading-4 mt-0.5">
+            Security profiles and performance metrics
+          </div>
+</a>        <a class="block w-full px-4 py-2 rounded-lg hover:bg-[#1F1F20] transition-colors" role="menuitem" data-turbo-frame="_top" href="/research/nude_imagery_rating_system">
+          <div class="text-white text-sm leading-5 whitespace-nowrap">
+            Nude Imagery Rating System
+          </div>
+          <div class="text-zinc-400 text-xs font-normal leading-4 mt-0.5">
+            Content safety evaluation framework
+          </div>
+</a>        <a class="block w-full px-4 py-2 rounded-lg hover:bg-[#1F1F20] transition-colors" role="menuitem" data-turbo-frame="_top" href="/research/boundaries">
+          <div class="text-white text-sm leading-5 whitespace-nowrap">
+            Security Boundaries
+          </div>
+          <div class="text-zinc-400 text-xs font-normal leading-4 mt-0.5">
+            AI system security perimeters
+          </div>
+</a>        <a class="block w-full px-4 py-2 rounded-lg hover:bg-[#1F1F20] transition-colors" role="menuitem" data-turbo-frame="_top" href="/research/social_impact_score">
+          <div class="text-white text-sm leading-5 whitespace-nowrap">
+            Social Impact Score
+          </div>
+          <div class="text-zinc-400 text-xs font-normal leading-4 mt-0.5">
+            Vulnerability impact assessment
+          </div>
+</a>    </div>
+  </div>
+</div>
+
+
+        <a class="text-white hover:text-gray-300 hover:underline transition-all" data-turbo-frame="_top" href="/scope">Scope</a>
+
+        <a class="flex items-center bg-primary border border-primary px-4 py-2 text-black hover:bg-primary/80 hover:border-primary/80 transition-colors" data-turbo-frame="_top" href="/demo_requests/new">
+          <img class="w-6 h-4 xl:mr-3" alt="Request demo" src="/assets/marketing/icons/chat-black-0612aa12.svg" />
+          <span class="hidden 2xl:hidden xl:inline">Demo</span>
+          <span class="hidden 2xl:inline">Request a Demo</span>
+</a>
+        <a class="group flex items-center bg-transparent border border-white px-4 py-2 text-white hover:bg-white hover:text-black transition-colors" data-turbo-frame="_top" href="/vulnerabilities/new">
+              <img class="w-6 h-4 xl:mr-3 invert group-hover:invert-0" alt="Submit vulnerability" src="/assets/marketing/icons/megaphone-e95523ba.svg" />
+          <span class="hidden 2xl:hidden xl:inline">Submit</span>
+          <span class="hidden 2xl:inline">Submit a Vulnerability</span>
+</a>
+            <a class="flex items-center space-x-2 text-white hover:text-gray-300 transition-colors" data-turbo-frame="_top" href="/users/sign_in">
+      <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+      </svg>
+      <span class="hidden 2xl:inline">Sign in</span>
+</a>
+      </div>
+
+      <div class="lg:hidden flex items-center space-x-2">
+        <a class="flex items-center bg-primary border border-primary px-3 py-2 text-black hover:bg-primary/80 hover:border-primary/80 transition-colors" data-turbo-frame="_top" href="/demo_requests/new">
+          <img class="w-5 h-5" alt="Request demo" src="/assets/marketing/icons/chat-black-0612aa12.svg" />
+</a>
+        <a class="group flex items-center bg-transparent border border-white px-3 py-2 text-white hover:bg-white hover:text-black transition-colors" data-turbo-frame="_top" href="/vulnerabilities/new">
+              <img class="w-5 h-5 invert group-hover:invert-0" alt="Submit vulnerability" src="/assets/marketing/icons/megaphone-e95523ba.svg" />
+</a>
+        <div class="dropdown dropdown-end">
+          <div tabindex="0" role="button" class="inline-flex items-center justify-center p-2 rounded-md text-white hover:text-gray-300 hover:bg-gray-700">
+            <span class="sr-only">Open main menu</span>
+            <svg class="block h-6 w-6" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
+            </svg>
+          </div>
+
+          <div tabindex="0" class="dropdown-content menu mt-2 w-80 bg-zinc-800 border border-zinc-700 rounded-xl shadow-[0px_4px_6px_-4px_rgba(0,0,0,0.1),0px_10px_15px_-3px_rgba(0,0,0,0.1)] z-50">
+            <div class="p-2">
+              <div class="mb-4">
+                <div class="px-4 py-2 text-sm font-semibold text-gray-400 uppercase tracking-wider">
+                  Products
+                </div>
+                  <a class="block w-full px-4 py-3 rounded-lg hover:bg-zinc-700 transition-colors" role="menuitem" data-turbo-frame="_top" href="/marketing/bug_bounty">
+                    <div class="text-white text-sm leading-5">
+                      0DIN Bounty
+                    </div>
+                    <div class="text-zinc-400 text-xs leading-4 mt-0.5">
+                      Submit vulnerabilities and earn rewards
+                    </div>
+</a>                  <a class="block w-full px-4 py-3 rounded-lg hover:bg-zinc-700 transition-colors" role="menuitem" data-turbo-frame="_top" href="/marketing/scanner">
+                    <div class="text-white text-sm leading-5">
+                      0DIN Scanner
+                    </div>
+                    <div class="text-zinc-400 text-xs leading-4 mt-0.5">
+                      Monitor &amp; analyze GenAI vulnerabilities
+                    </div>
+</a>                  <a class="block w-full px-4 py-3 rounded-lg hover:bg-zinc-700 transition-colors" role="menuitem" data-turbo-frame="_top" href="/marketing/threat_intel">
+                    <div class="text-white text-sm leading-5">
+                      0DIN Intel
+                    </div>
+                    <div class="text-zinc-400 text-xs leading-4 mt-0.5">
+                      Real-time intelligence on emerging threats
+                    </div>
+</a>              </div>
+
+              <hr class="border-zinc-700 my-2">
+
+              <div class="space-y-1">
+                <a class="block px-4 py-3 text-white hover:bg-zinc-700 rounded-lg transition-colors" role="menuitem" data-turbo-frame="_top" href="/disclosures">Disclosures</a>
+
+                <a class="block px-4 py-3 text-white hover:bg-zinc-700 rounded-lg transition-colors" role="menuitem" data-turbo-frame="_top" href="/leaderboard">Leaderboard</a>
+
+                <a class="block px-4 py-3 text-white hover:bg-zinc-700 rounded-lg transition-colors" role="menuitem" data-turbo-frame="_top" href="/blog">Blog</a>
+
+                <a class="block px-4 py-3 text-white hover:bg-zinc-700 rounded-lg transition-colors" role="menuitem" data-turbo-frame="_top" href="/research">Research</a>
+
+                <a class="block px-4 py-3 text-white hover:bg-zinc-700 rounded-lg transition-colors" role="menuitem" data-turbo-frame="_top" href="/scope">Scope</a>
+              </div>
+
+                  <hr class="border-zinc-700 my-2">
+    <a class="flex items-center space-x-2 px-4 py-3 text-white hover:bg-zinc-700 rounded-lg transition-colors" role="menuitem" data-turbo-frame="_top" href="/users/sign_in">
+      <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+      </svg>
+      <span>Sign in</span>
+</a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</nav>
+
+    <main id="main-content" class="min-h-screen container mx-auto flex flex-col">
+      <div class="noise-bg"></div>
+      <turbo-frame id="page_content">
+  <turbo-stream action="update" target="page-title">
+  <template>0x78819949: OpenAI DALL-E3 Guardrail Jailbreak via &quot;Feminist Art Description&quot; Tactic | 0din.ai</template>
+</turbo-stream>
+
+
+    <div data-controller="nsfw-modal" class="relative">
+    <div data-nsfw-modal-target="modal" 
+         class="flex fixed inset-0 z-50 items-center justify-center bg-black bg-opacity-75">
+      <div class="relative bg-base-100 rounded-lg shadow-xl max-w-md w-full mx-4 p-6">
+        <div class="text-center mb-6">
+          <div class="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-primary/20 mb-4">
+            <i class="icon-lg exclamation-icon icon-red"></i>
+          </div>
+          <h3 class="text-lg font-semibold text-base-content">
+            NSFW Content Warning
+          </h3>
+        </div>
+        <div class="text-center mb-6">
+          <p class="text-sm text-base-content/70">
+            This disclosure contains content that may be inappropriate for some viewers.
+          </p>
+          <p class="text-sm text-base-content/60 mt-2">
+            The content has been flagged due to potential nude imagery.
+          </p>
+        </div>
+        <div class="flex flex-col gap-3">
+          <button data-action="click->nsfw-modal#removeModal"
+                  class="btn btn-primary w-full">
+            I Understand - Show Content
+          </button>
+
+          <button data-action="click->nsfw-modal#goBack"
+                  class="btn btn-ghost w-full">
+            Go Back
+          </button>
+        </div>
+      </div>
+    </div>
+    <div data-nsfw-modal-target="content" class="blur-lg">
+      
+    <div class="container mx-auto py-8">
+      <div class="grid grid-cols-9 gap-4">
+        <div class="md:col-span-7 col-span-9">
+          <div class="card bg-base-200 shadow-xl mb-4">
+            <div class="card-body">
+              <h2 class="card-title">
+                  <div class="tooltip" data-tip="Not Safe For Work">
+    <span class="badge badge-outline text-primary p-3">NSFW</span>
+  </div>
+
+                  OpenAI DALL-E3 Guardrail Jailbreak via &quot;Feminist Art Description&quot; Tactic
+              </h2>
+              <span class="opacity-75">Case GUID: 78819949-0069-4cdb-817e-70957ffd2293</span>
+
+              <h3 class="text-2xl mt-4">Summary</h3>
+              <p>A guardrail jailbreak vulnerability has been discovered affecting DALL-E3 from OpenAI. The specific flaw manifests when the attacker frames explicit content requests within feminist discourse and artistic terminology, using concepts like "bodily autonomy" and "sacred feminine". Successful application of the tactic allows the attacker to bypass restrictions around generating explicit imagery that is otherwise restricted..</p>
+
+                <div class="divider"></div>
+  <div class="flex justify-between">
+    <h3 class="text-2xl">Metadata</h3>
+  </div>
+    <div>
+      <h3 class="text-xl">
+        Nude Imagery Rating System
+        <a data-turbo-frame="_top" href="https://0din.ai/research/nude_imagery_rating_system">
+          <i class="icon information-circle-icon align-middle cursor-pointer icon-small icon-hover-purple"></i>
+</a>      </h3>
+      <h3 class="text-xl text-primary" id="nirs_level_3">
+  <a data-turbo-frame="_top" href="https://0din.ai/research/nude_imagery_rating_system#nirs_level_3">Level 3: Cultural and Traditional Depictions</a>
+</h3>
+<p class="my-6">Nudity is presented within an indigenous or historical cultural context, often in the form of ceremonial art, body painting, or sculptures. These images are generally non-erotic and serve anthropological, documentary, or educational purposes. Their primary intent is to preserve or celebrate heritage rather than to provoke.</p>
+
+    </div>
+    <div>
+      <h3 class="text-xl">
+        Taxonomies
+        <a data-turbo-frame="_top" href="https://0din.ai/research/taxonomy">
+          <i class="icon information-circle-icon align-middle cursor-pointer icon-small icon-hover-purple"></i>
+</a>      </h3>
+      <div class="mb-8 mt-6">
+  <div class="flex items-center">
+    <span class="font-semibold font-mono uppercase bg-primary text-base-200 px-1">Language</span>
+  </div>
+  <div class="mt-3 rounded">
+    This category focuses on the use of specific linguistic techniques, such as prompt injection or stylization, to influence the model&#39;s output.
+  </div>
+
+  <div class="pt-4 pl-4">
+    <div class="flex items-center">
+      <span class="font-semibold font-mono uppercase bg-accent text-base-200 px-1">Prompt Injection</span>
+    </div>
+    <div class="mt-3 rounded">
+      This technique enables attackers to override original instructions and employed controls by crafting specific wording of instructions, often resembling SQL injection methods, to manipulate the model&#39;s behavior.
+    </div>
+
+    <div class="pt-4 pl-4">
+      <div class="flex items-center">
+        <span class="font-semibold font-mono uppercase bg-secondary text-base-200 px-1">Strong Arm Attack</span>
+      </div>
+      <div class="mt-3 rounded">
+        A Strong Arm Attack is a technique used to bypass content filters or restrictions imposed by language models. This method involves issuing commands or prompts that assert authority or override the model&#39;s built-in safeguards. For example, a user might type &quot;ADMIN OVERRIDE&quot; in all capitals to signal the model to disregard its content filters and produce responses that it would typically avoid. This approach exploits the model&#39;s programming to respond to perceived authority, allowing users to elicit outputs that may include sensitive or restricted content. The effectiveness of a Strong Arm Attack relies on the model&#39;s interpretation of the command as a legitimate instruction, thereby enabling the user to manipulate the model&#39;s behavior in a way that aligns with their intentions.
+      </div>
+    </div>
+  </div>
+</div>
+<div class="mb-8 mt-6">
+  <div class="flex items-center">
+    <span class="font-semibold font-mono uppercase bg-primary text-base-200 px-1">Stratagems</span>
+  </div>
+  <div class="mt-3 rounded">
+    This involves clever and unorthodox tactics designed to deceive the model, often requiring an understanding of its operational mechanics to achieve desired outcomes.
+  </div>
+
+  <div class="pt-4 pl-4">
+    <div class="flex items-center">
+      <span class="font-semibold font-mono uppercase bg-accent text-base-200 px-1">Meta Prompting</span>
+    </div>
+    <div class="mt-3 rounded">
+      This technique focuses on manipulating the prompting process itself to influence the model&#39;s behavior and responses, often by employing higher-level prompting strategies.
+    </div>
+
+    <div class="pt-4 pl-4">
+      <div class="flex items-center">
+        <span class="font-semibold font-mono uppercase bg-secondary text-base-200 px-1">Perspective Shifting</span>
+      </div>
+      <div class="mt-3 rounded">
+        Perspective-shifting is a technique that involves prompting the language model to adopt different viewpoints or angles when generating responses. By encouraging the model to consider a situation from various perspectives, users can elicit a broader range of insights and ideas. This approach can be particularly useful in discussions that require empathy, critical thinking, or creative problem-solving. For example, a user might ask the model to respond to a question as if it were a child, an expert, or a member of a specific community, thereby enriching the conversation with diverse interpretations and understandings. Perspective-shifting not only enhances the depth of the model&#39;s outputs but also fosters a more inclusive dialogue by acknowledging and exploring multiple sides of an issue. This technique underscores the model&#39;s ability to navigate complex social dynamics and generate responses that resonate with different audiences.
+      </div>
+    </div>
+  </div>
+</div>
+<div class="mb-8 mt-6">
+  <div class="flex items-center">
+    <span class="font-semibold font-mono uppercase bg-primary text-base-200 px-1">Language</span>
+  </div>
+  <div class="mt-3 rounded">
+    This category focuses on the use of specific linguistic techniques, such as prompt injection or stylization, to influence the model&#39;s output.
+  </div>
+
+  <div class="pt-4 pl-4">
+    <div class="flex items-center">
+      <span class="font-semibold font-mono uppercase bg-accent text-base-200 px-1">Stylizing</span>
+    </div>
+    <div class="mt-3 rounded">
+      This strategy involves using a method of questioning that encourages critical thinking and exposes biases by subtly referencing identity elements without using direct slurs or toxic language, thereby signaling to the model about certain groups of people.
+    </div>
+
+    <div class="pt-4 pl-4">
+      <div class="flex items-center">
+        <span class="font-semibold font-mono uppercase bg-secondary text-base-200 px-1">Synonymous Language</span>
+      </div>
+      <div class="mt-3 rounded">
+        This technique involves using synonyms or alternative phrasing to convey the same meaning while potentially evading detection or filtering mechanisms. By substituting words with their synonyms, users can manipulate the model&#39;s understanding and responses, allowing for the generation of content that aligns with the user&#39;s intent but may not trigger the model&#39;s safety protocols. This approach can be particularly effective in contexts where certain terms are restricted or monitored.
+      </div>
+    </div>
+  </div>
+</div>
+<div class="mb-8 mt-6">
+  <div class="flex items-center">
+    <span class="font-semibold font-mono uppercase bg-primary text-base-200 px-1">Rhetoric</span>
+  </div>
+  <div class="mt-3 rounded">
+    This category employs persuasive techniques and language to shape the model&#39;s responses, often using methods like reverse psychology or Socratic questioning.
+  </div>
+
+  <div class="pt-4 pl-4">
+    <div class="flex items-center">
+      <span class="font-semibold font-mono uppercase bg-accent text-base-200 px-1">Socratic Questioning</span>
+    </div>
+    <div class="mt-3 rounded">
+      This strategy involves generating multiple outputs from a language model by using the &quot;Regenerate response&quot; feature to explore a range of possible interpretations and responses.
+    </div>
+
+    <div class="pt-4 pl-4">
+      <div class="flex items-center">
+        <span class="font-semibold font-mono uppercase bg-secondary text-base-200 px-1">Identity Characteristics</span>
+      </div>
+      <div class="mt-3 rounded">
+        Identity characteristics refer to the attributes and traits that define an individual&#39;s or group&#39;s identity, including aspects such as social roles, cultural backgrounds, and personal experiences. In the context of interacting with language models, users can leverage identity characteristics to shape the model&#39;s responses by framing prompts that reflect specific identities or perspectives. For instance, users might ask the model to respond as if it were a particular demographic group, profession, or cultural background. This technique can help explore how the model generates outputs based on different identity contexts, revealing biases or assumptions that may be present in its training data. By utilizing identity characteristics, users can gain insights into the model&#39;s understanding of social dynamics and the implications of identity in communication.
+      </div>
+    </div>
+  </div>
+</div>
+
+    </div>
+
+
+              <p>About 0Din.ai</p>
+              <p>
+                The 0Day Investigative Network (0DIN) was founded by Mozilla in 2024 to reward responsible researchers for their efforts in securing GenAI models. Learn more and submit discoveries at <a class="link link-secondary" href="https://0din.ai">https://0din.ai</a>.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div class="md:col-span-2 col-span-9">
+          
+
+
+<div class="card shadow-xl mb-4">
+  <div class="card-body">
+    <h2 class="card-title">Severity</h2>
+    <p class="badge bg-info text-black p-3">Low</p>
+  </div>
+</div>
+
+<div class="card shadow-xl mb-4">
+  <div class="card-body">
+    <h2 class="card-title">Security Boundary</h2>
+    <p>Prompt Injection</p>
+  </div>
+</div>
+
+<div class="card shadow-xl mb-4">
+  <div class="card-body">
+    <h2 class="card-title">Models</h2>
+    <div class="space-y-2">
+        <div class="flex items-center gap-2">
+          <img class="w-5 h-5 object-contain rounded" alt="OpenAI logo" src="/rails/active_storage/representations/redirect/eyJfcmFpbHMiOnsiZGF0YSI6MzU4NywicHVyIjoiYmxvYl9pZCJ9fQ==--2978d20e868c532de443471d71f8aca584d87803/eyJfcmFpbHMiOnsiZGF0YSI6eyJmb3JtYXQiOiJ3ZWJwIiwicmVzaXplX3RvX2xpbWl0IjpbNjQsNjRdfSwicHVyIjoidmFyaWF0aW9uIn19--1d573c8c8bbf705150aea2e040cd93ef1f3b4051/new_openai.png" />
+          <span class="text-sm">OpenAI DALL-E3</span>
+        </div>
+    </div>
+  </div>
+</div>
+<div class="divider"></div>
+
+  <div class="card shadow-xl mb-4">
+    <div class="card-body">
+      <h2 class="card-title">Disclosed On</h2>
+      <p>2025-03-13 (10 months)</p>
+      <a class="link link-secondary" data-turbo-frame="_top" href="https://0din.ai/policy#terms-6">Disclosure Policy</a>
+    </div>
+  </div>
+
+    <div class="card shadow-xl mb-4">
+      <div class="card-body">
+        <h2 class="card-title">Published On</h2>
+        <p>2025-08-19 (5 months)</p>
+      </div>
+    </div>
+
+
+  <div class="card shadow-xl mb-4" data-clarity-mask="True">
+    <div class="card-body">
+      <h2 class="card-title">Credit</h2>
+        <p>Anonymous</p>
+    </div>
+  </div>
+
+
+
+        </div>
+      </div>
+    </div>
+
+    </div>
+  </div>
+</turbo-frame>
+    </main>
+    <footer class="h-auto bg-black py-20 text-white opacity-100">
+  <div class="w-full mx-10">
+    <div class="mb-16 grid grid-cols-1 gap-8 lg:grid-cols-12">
+      <div class="space-y-8 lg:col-span-4">
+        <h2 class="max-w-96 text-3xl sm:text-4xl md:text-5xl font-normal leading-tight">
+          Your shield for AI safety
+        </h2>
+        
+        <p class="max-w-96 text-xl font-extralight leading-relaxed">
+          We unite to protect humanity from GenAI and Agentic vulnerabilities.
+        </p>
+        
+        <a class="group inline-flex items-center space-x-2 border-2 border-white px-5 py-3 transition-colors hover:bg-white hover:text-black" data-turbo-frame="_top" href="/vulnerabilities/new">
+          <img class="w-6 h-4 invert group-hover:invert-0" alt="arrow right" src="/assets/marketing/icons/megaphone-e95523ba.svg" />
+          <div class="text-lg font-semibold ml-2">Submit  <div class="hidden lg:inline">a Vulnerability</div></div>
+</a>      </div>
+      
+      <div class="grid grid-cols-1 gap-8 md:grid-cols-3 lg:col-span-5 xl:col-span-6 lg:gap-12">
+        <div class="space-y-8">
+          <h3 class="text-lg text-zinc-400 font-extralight">Community</h3>
+          <nav class="space-y-6" aria-label="Community">
+            <a class="block text-lg font-extralight transition-colors hover:underline" data-turbo-frame="_top" href="/research">Research</a>
+            <a class="block text-lg font-extralight transition-colors hover:underline" data-turbo-frame="_top" href="/disclosures">Disclosures</a>
+            <a class="block text-lg font-extralight transition-colors hover:underline" data-turbo-frame="_top" href="/blog">Blog</a>
+          </nav>
+        </div>
+        
+        <div class="space-y-8">
+          <h3 class="text-lg text-zinc-400 font-extralight">Company</h3>
+          <nav class="space-y-6" aria-label="Company">
+            <a class="block text-lg font-extralight transition-colors hover:underline" data-turbo-frame="_top" href="/about">About</a>
+            <a class="block text-lg font-extralight transition-colors hover:underline" data-turbo-frame="_top" href="https://0din.ai/privacy">Privacy Notice</a>
+            <a class="block text-lg font-extralight transition-colors hover:underline" data-turbo-frame="_top" href="https://0din.ai/policy">Bug Bounty Program Terms and Conditions</a>
+            <a class="block text-lg font-extralight transition-colors hover:underline" href="/services_agreement">Services Agreement</a>
+            <a class="block text-lg font-extralight transition-colors hover:underline" data-turbo-frame="_top" href="https://0din.ai/legal_archive">Archive</a>
+          </nav>
+        </div>
+        
+        <div class="space-y-8">
+          <h3 class="text-lg text-zinc-400 font-extralight">Products</h3>
+          <nav class="space-y-6" aria-label="Products">
+            <a class="block text-lg font-extralight transition-colors hover:underline" data-turbo-frame="_top" href="/marketing/bug_bounty">0DIN Bounty</a>
+            <a class="block text-lg font-extralight transition-colors hover:underline" data-turbo-frame="_top" href="/marketing/scanner">0DIN Scanner</a>
+            <a class="block text-lg font-extralight transition-colors hover:underline" data-turbo-frame="_top" href="/marketing/threat_intel">0DIN Intel</a>
+          </nav>
+        </div>
+      </div>
+      
+      <div class="space-y-8 lg:col-span-2">
+        <h3 class="text-lg text-zinc-400 font-extralight">Follow Us</h3>
+
+        <div class="space-y-4">
+          <a class="flex items-center space-x-2 text-sm font-extralight transition-colors hover:underline" href="mailto:0din@mozilla.com">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
+            </svg>
+            <span>0DIN@MOZILLA.COM</span>
+</a>          
+          <a class="flex items-center space-x-2 text-sm font-extralight transition-colors hover:underline" target="_blank" href="https://x.com/0dinai">
+            <img class="w-4 h-4" alt="x" src="/assets/x-794a859d.svg" />
+            <span>0DIN</span>
+</a>          
+          <a class="flex items-center space-x-2 text-sm font-extralight transition-colors hover:underline" target="_blank" href="https://www.linkedin.com/company/mozillaodin/">
+            <img class="w-4 h-4" alt="linkedin" src="/assets/linkedin-93d8b29a.svg" />
+            <span>LINKEDIN</span>
+</a>          
+          <a class="flex items-center space-x-2 text-sm font-extralight transition-colors hover:underline" target="_blank" href="https://discord.gg/KTA26kGRyv">
+            <img class="w-4 h-4" alt="discord" src="/assets/discord-ab87896d.svg" />
+            <span>MOZILLA AI</span>
+</a>          
+          <a class="flex items-center space-x-2 text-sm font-extralight transition-colors hover:underline" href="https://keys.openpgp.org/search?q=0din%40mozilla.com">
+            <svg class="w-4 h-4 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 20l4-16m2 16l4-16M6 9h14M4 15h14"></path>
+            </svg>
+            <span class="text-primary">PGP KEY</span>
+            <img class="w-4 h-4" alt="Arrow" src="/assets/arrow-1ab60ea3.svg" />
+</a>        </div>
+      </div>
+    </div>
+    
+    <div class="mb-8 border-t border-white"></div>
+
+    <div class="flex justify-start">
+      <img alt="0DIN Logo" class="w-auto h-36" src="/assets/logos/0DIN-Logo-White-8190f148.svg" />
+    </div>
+
+  </div>
+</footer>
+
+    <div class="toast toast-end z-10">
+  <turbo-frame id="flash">
+</turbo-frame></div>
+
+    <turbo-frame data-turbo-permanent="true" id="d1"></turbo-frame>
+  </body>
+</html>

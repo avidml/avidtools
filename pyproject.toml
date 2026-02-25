@@ -1,57 +1,88 @@
-[tool.poetry]
+[project]
 name = "avidtools"
-version = "0.1"
-description = "Seamlessly integrate pydantic models in your Sphinx documentation."
-authors = ["mansenfranzen <franz.woellert@gmail.com>"]
-packages = [{ include = "sphinxcontrib" }]
-license = "MIT"
-readme = "README.md"
-homepage = "https://github.com/mansenfranzen/autodoc_pydantic"
-repository = "https://github.com/mansenfranzen/autodoc_pydantic"
-documentation = "https://github.com/mansenfranzen/autodoc_pydantic"
-keywords = ["sphinx", "pydantic", "autodoc", "documentation", "extension"]
-classifiers = [
-    "Framework :: Sphinx :: Extension",
-    "Topic :: Documentation :: Sphinx",
-    "Topic :: Software Development :: Documentation"
+version = "0.2.1"
+description = "Developer tools for AVID"
+authors = [
+    {name = "Subho Majumdar", email = "subho@avidml.org"},
+    {name = "Harsh Raj", email = "harsh@avidml.org"},
+    {name = "Carol Anderson", email = "carol@avidml.org"},
+    {name = "Nathan Butters", email = "nathan@avidml.org"}
 ]
-include = ["sphinxcontrib/autodoc_pydantic/css/autodoc_pydantic.css"]
+readme = "README.md"
+license = {text = "Apache-2.0"}
+keywords = ["ai", "vulnerability", "security", "machine-learning", "avid"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: Apache Software License",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Security",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+]
+requires-python = ">=3.12"
+
+[project.urls]
+Homepage = "https://github.com/avidml/avidtools"
+Repository = "https://github.com/avidml/avidtools"
+Documentation = "https://github.com/avidml/avidtools"
+"Bug Tracker" = "https://github.com/avidml/avidtools/issues"
 
 [tool.poetry.dependencies]
-python = "^3.6.1"
-Sphinx = ">=3.4"
-pydantic = ">=1.5"
+python = "^3.12"
+pydantic = "^2.11.5"
+typing-extensions = "^4.13.2"
+nvdlib = "^0.8.1"
+openai = "^1.0.0"
+beautifulsoup4 = "^4.12.0"
+requests = "^2.31.0"
+lxml = "^5.0.0"
+urllib3 = "^2.6.3"
 
-sphinx-rtd-theme = { version = "^1.0", optional = true }
-sphinx-tabs = { version = "^3", optional = true }
-sphinx-copybutton = { version = "^0.4", optional = true }
-sphinxcontrib-mermaid = { version = "^0.7", optional = true }
-pytest = {version = "^6", optional = true }
-coverage = { version ="^5", optional = true }
-flake8 = { version = "^3", optional = true }
-tox = { version ="^3", optional = true }
-
-[tool.pytest.ini_options]
-minversion = "6.0"
-
-[tool.poetry.extras]
-docs = ["sphinx-rtd-theme",
-        "sphinx-tabs",
-        "sphinx-copybutton",
-        "sphinxcontrib-mermaid"]
-
-test = ["pytest",
-        "coverage"]
-
-dev = ["pytest",
-       "coverage",
-       "sphinx-rtd-theme",
-       "sphinx-tabs",
-       "sphinx-copybutton",
-       "sphinxcontrib-mermaid",
-       "flake8",
-       "tox"]
+[tool.poetry.group.dev.dependencies]
+mypy = "^1.16.0"
+ruff = "^0.11.12"
+pytest = "^8.0.0"
+pytest-cov = "^4.0.0"
+pytest-mock = "^3.12.0"
+responses = "^0.24.0"
+types-requests = "^2.32.4.20250611"
+types-pyyaml = "^6.0.12.20250516"
 
 [build-system]
-requires = ["poetry-core>=1.0.0"]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
 build-backend = "poetry.core.masonry.api"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py", "*_test.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = [
+    "--strict-markers",
+    "--strict-config",
+    "--cov=avidtools",
+    "--cov-report=term-missing",
+    "--cov-report=html",
+    "--cov-report=xml",
+]
+markers = [
+    "integration: marks tests as integration tests",
+    "unit: marks tests as unit tests",
+]
+
+[tool.coverage.run]
+source = ["avidtools"]
+omit = [
+    "tests/*",
+    "*/test_*",
+]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "if __name__ == .__main__.:",
+]
+

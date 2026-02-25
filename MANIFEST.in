@@ -1,0 +1,11 @@
+include README.md
+include LICENSE
+include MANIFEST.in
+recursive-include avidtools *.py
+recursive-exclude tests *
+recursive-exclude .github *
+exclude .gitignore
+exclude .ruff_cache
+exclude .pytest_cache
+exclude .mypy_cache
+exclude *.egg-info
