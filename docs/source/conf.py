@@ -80,7 +80,7 @@ html_theme_options = {
 
 add_module_names = False
 
-mermaid_version = ""
+mermaid_version = "10.9.1"
 html_static_path = ["_static"]
 html_js_files = ['mermaid.min.js']
 html_css_files = ['custom.css']
