@@ -242,6 +242,12 @@ Important guidelines:
 - Be specific and accurate
 - Extract actual names, organizations, and technical details from the content
 - problemtype.description.value MUST be a short title, not a paragraph. Summarize the actual issue concisely, do NOT mention the reporter, or that it's from a URL or article. You can mention the product as needed. Focus on the core vulnerability or issue.
+- problemtype.type MUST be one of: Issue, Advisory, Measurement, Detection
+- Type definitions (from AVID database):
+    - Issue: qualitative evaluation based on a single sample or handful of samples
+    - Advisory: qualitative evaluation based on multiple Incidents
+    - Measurement: quantitative evaluation with associated data and metric
+    - Detection: a Measurement deemed critical by a threshold or statistical test
 - description.value should contain the detailed narrative description
 - Credit guidance: include the research team/person and article author when available; include company only when a research team/person is not identified
 - MUST include the source URL ({scraped_data['url']}) in references with an appropriate label
@@ -281,6 +287,58 @@ Important guidelines:
             normalized = normalized[:117].rstrip() + "..."
 
         description_obj["value"] = normalized
+        return parsed_data
+
+    def _normalize_problemtype_type(
+        self, parsed_data: dict[str, Any], scraped_data: dict[str, Any]
+    ) -> dict[str, Any]:
+        """Ensure problemtype.type is always a valid TypeEnum value."""
+        problemtype = parsed_data.get("problemtype")
+        if not isinstance(problemtype, dict):
+            parsed_data["problemtype"] = {
+                "classof": ClassEnum.third_party.value,
+                "type": TypeEnum.issue.value,
+                "description": {"lang": "eng", "value": (scraped_data.get("title") or "Issue")[:120]},
+            }
+            return parsed_data
+
+        raw_type = problemtype.get("type")
+        normalized_raw_type = None
+        if isinstance(raw_type, str) and raw_type.strip():
+            mapping = {
+                "issue": TypeEnum.issue.value,
+                "advisory": TypeEnum.advisory.value,
+                "measurement": TypeEnum.measurement.value,
+                "detection": TypeEnum.detection.value,
+            }
+            normalized_raw_type = mapping.get(raw_type.strip().lower())
+
+        classof = str(problemtype.get("classof") or "").lower()
+        text = " ".join(
+            [
+                scraped_data.get("title") or "",
+                (scraped_data.get("text") or "")[:5000],
+            ]
+        ).lower()
+        url = str(scraped_data.get("url") or "").lower()
+
+        if "cve entry" in classof or "advisory" in classof:
+            inferred = TypeEnum.advisory.value
+        elif any(k in text or k in url for k in ["benchmark", "evaluation", "measured", "metric", "score", "accuracy", "recall", "precision"]):
+            inferred = TypeEnum.measurement.value
+        elif any(k in text or k in url for k in ["detect", "detector", "detection", "flagged", "classifier"]):
+            inferred = TypeEnum.detection.value
+        elif any(k in text or k in url for k in ["cve-", "vulnerability", "vulnerable", "security bulletin", "advisory", "exploit", "rce", "xss", "csrf", "injection", "auth bypass", "data leak", "exposed", "critical vulnerability"]):
+            inferred = TypeEnum.advisory.value
+        else:
+            inferred = TypeEnum.issue.value
+
+        if normalized_raw_type == TypeEnum.issue.value and inferred == TypeEnum.advisory.value:
+            problemtype["type"] = TypeEnum.advisory.value
+        elif normalized_raw_type:
+            problemtype["type"] = normalized_raw_type
+        else:
+            problemtype["type"] = inferred
         return parsed_data
 
     def _parse_ai_response(self, response_text: str) -> dict[str, Any]:
@@ -739,6 +797,9 @@ Important guidelines:
                 # Step 4: Parse AI response
                 parsed_data = self._parse_ai_response(ai_response)
                 parsed_data = self._normalize_problemtype_title(
+                    parsed_data, scraped_data
+                )
+                parsed_data = self._normalize_problemtype_type(
                     parsed_data, scraped_data
                 )
                 print("Successfully parsed AI response")

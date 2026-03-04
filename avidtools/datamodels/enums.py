@@ -89,7 +89,7 @@ class ClassEnum(str, Enum):
 
 
 class TypeEnum(str, Enum):
-    """All report/vulnerability types."""
+    """All report/vulnerability types. Source: https://avidml.org/database/"""
 
     issue = "Issue"
     advisory = "Advisory"
