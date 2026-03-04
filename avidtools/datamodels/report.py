@@ -7,7 +7,14 @@ from pydantic import BaseModel
 from typing import List, Optional
 from datetime import date
 
-from .components import Affects, Problemtype, Metric, Reference, LangValue, Impact
+from .components import (
+    Affects,
+    Problemtype,
+    Metric,
+    Reference,
+    LangValue,
+    Impact,
+)
 
 
 class ReportMetadata(BaseModel):
@@ -20,7 +27,11 @@ class Report(BaseModel):
     """Top-level class to store an AVID report."""
 
     data_type: str = "AVID"
-    """Namespace for the report. Set to AVID by default, change this only if you're adopting these datamodels to stand up your own vulnerability database."""
+    """Namespace for the report.
+
+    Set to AVID by default; change this only if adopting these datamodels
+    for a custom vulnerability database.
+    """
 
     data_version: Optional[str] = None
     """Latest version of the data."""
@@ -35,7 +46,7 @@ class Report(BaseModel):
     """Description of the problem a report is concerned with."""
 
     metrics: Optional[List[Metric]] = None
-    """Quantitative results pertaining to the issues raised in a specific report."""
+    """Quantitative results for issues raised in a specific report."""
 
     references: Optional[List[Reference]] = None
     """References and their details."""
@@ -44,7 +55,7 @@ class Report(BaseModel):
     """High-level description."""
 
     impact: Optional[Impact] = None
-    """Impact information, e.g. different taxonomy mappings, harm and severity scores."""
+    """Impact information, including taxonomy mappings and severity scores."""
 
     credit: Optional[List[LangValue]] = None
     """People credited for this report."""
@@ -52,13 +63,21 @@ class Report(BaseModel):
     reported_date: Optional[date] = None
     """Date reported."""
 
-    def save(self, location):
-        """Save a report as a json file.
+    def save(self, location, append: bool = False, jsonl: bool = False):
+        """Save a report as JSON or JSONL.
 
         Parameters
         ----------
         location : str
-            output *.json filename including location.
+            Output filename including location.
+        append : bool
+            Append mode; useful when writing multiple JSONL records.
+        jsonl : bool
+            When true, writes one JSON object per line.
         """
-        with open(location, "w") as outfile:
-            outfile.write(self.json())
+        mode = "a" if append else "w"
+        with open(location, mode, encoding="utf-8") as outfile:
+            if jsonl:
+                outfile.write(self.model_dump_json(exclude_none=True) + "\n")
+            else:
+                outfile.write(self.model_dump_json(exclude_none=True))

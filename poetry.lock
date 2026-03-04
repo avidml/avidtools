@@ -684,23 +684,6 @@ files = [
 ]
 
 [[package]]
-name = "nvdlib"
-version = "0.8.1"
-description = "National Vulnerability Database CPE/CVE API Library for Python"
-optional = false
-python-versions = ">=3.11.0"
-groups = ["main"]
-files = [
-    {file = "nvdlib-0.8.1-py3-none-any.whl", hash = "sha256:4f92a4ca242310cf2099d594bbe910ac8009a8adde0641d0e58f90c1c83ffed9"},
-]
-
-[package.dependencies]
-requests = "*"
-
-[package.extras]
-dev = ["pytest (==7.0.1)", "responses (==0.18.0)"]
-
-[[package]]
 name = "openai"
 version = "1.109.1"
 description = "The official Python library for the openai API"
@@ -1230,4 +1213,4 @@ zstd = ["backports-zstd (>=1.0.0) ; python_version < \"3.14\""]
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.12"
-content-hash = "d1abca1f272731291c122dd90030f156dd23016be294caba46cc61a47a03060d"
+content-hash = "c4ecb0edd2a1019989a148afffd6b3427a6dabb8c7814f0c3c1424655b225b2f"

@@ -33,16 +33,28 @@ def sample_atlas_case_study() -> Dict[str, Any]:
 def sample_cve_data() -> Dict[str, Any]:
     """Sample CVE data for testing."""
     return {
-        "id": "CVE-2023-12345",
-        "descriptions": [
-            {"lang": "en", "value": "Test CVE description"}
-        ],
-        "published": "2023-01-15T10:00:00.000Z",
-        "lastModified": "2023-01-16T12:00:00.000Z",
-        "sourceIdentifier": "test@example.com",
-        "url": "https://nvd.nist.gov/vuln/detail/CVE-2023-12345",
-        "cpe": [],
-        "references": []
+        "cveMetadata": {
+            "cveId": "CVE-2023-12345",
+            "datePublished": "2023-01-15T10:00:00.000Z",
+            "dateUpdated": "2023-01-16T12:00:00.000Z",
+            "assignerOrgId": "test@example.com",
+        },
+        "containers": {
+            "cna": {
+                "title": "Sample CVE title",
+                "descriptions": [
+                    {"lang": "en", "value": "Test CVE description"}
+                ],
+                "references": [
+                    {"url": "https://example.com/advisory"},
+                    {"url": "https://github.com/vendor/repo/issues/123"},
+                ],
+                "affected": [
+                    {"vendor": "vendor", "product": "product"},
+                    {"vendor": "other", "product": "software"},
+                ],
+            }
+        },
     }
 
 
@@ -50,9 +62,3 @@ def sample_cve_data() -> Dict[str, Any]:
 def mock_requests_get(mocker):
     """Mock requests.get for testing external API calls."""
     return mocker.patch("requests.get")
-
-
-@pytest.fixture
-def mock_nvdlib_search(mocker):
-    """Mock nvdlib.searchCVE for testing CVE imports."""
-    return mocker.patch("nvdlib.searchCVE")
