@@ -16,6 +16,7 @@ from avidtools.connectors.cve import (  # noqa: E402
     fetch_reports_for_cves,
     save_reports_to_jsonl,
 )
+from avidtools.datamodels.components import Reference  # noqa: E402
 
 
 def _extract_repo_owner_and_name(repo_url: str) -> tuple[str, str]:
@@ -67,6 +68,23 @@ def scrape_published_cve_ids_from_openclaw(repo_url: str) -> Set[str]:
     return cve_ids
 
 
+def add_source_reference_to_reports(repo_url: str, reports: list) -> None:
+    """Add the OpenClaw repository URL as a source reference to each report."""
+    normalized_url = repo_url.rstrip("/")
+    for report in reports:
+        existing_refs = report.references or []
+        if any(ref.url == normalized_url for ref in existing_refs):
+            continue
+        existing_refs.append(
+            Reference(
+                type="source",
+                label="OpenClawCVEs repository",
+                url=normalized_url,
+            )
+        )
+        report.references = existing_refs
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description="Scrape published CVEs from OpenClawCVEs and convert to AVID Reports"
@@ -101,6 +119,8 @@ if __name__ == "__main__":
     if not reports:
         print("No Reports were created.")
         raise SystemExit(1)
+
+    add_source_reference_to_reports(args.repo_url, reports)
 
     utc_timestamp = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
     filename = f"openclaw_cve_digest_{utc_timestamp}.jsonl"
