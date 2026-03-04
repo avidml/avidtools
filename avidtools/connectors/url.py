@@ -4,6 +4,7 @@ URL connector for AVID that scrapes web content and uses an AI agent to create A
 
 import os
 import json
+import re
 from datetime import date
 from typing import Any, Optional
 import requests
@@ -125,9 +126,9 @@ The AVID Report follows this exact schema:
 {{
   "data_type": "AVID",
   "data_version": "string (optional)",
-  "metadata": {{
-    "report_id": "string (required, format: AVID-YYYY-R-XXXX)"
-  }},
+        "metadata": {{
+        "report_id": "string (optional; omit for unpublished reports)"
+        }},
   "affects": {{
     "developer": ["list of developer organizations of the model/system involved"],
     "deployer": ["list of deployer organizations"],
@@ -138,14 +139,14 @@ The AVID Report follows this exact schema:
       }}
     ]
   }},
-  "problemtype": {{
+    "problemtype": {{
     "classof": "AIID Incident|ATLAS Case Study|CVE Entry|LLM Evaluation|Third-party Report|Undefined (required, default: Third-party Report)",
     "type": "Issue|Advisory|Measurement|Detection (optional)",
     "description": {{
       "lang": "eng",
-      "value": "description text"
+            "value": "short title (required, concise, ideally <= 12 words)"
     }}
-  }},
+    }},
   "metrics": [
     {{
       "name": "metric name",
@@ -201,10 +202,10 @@ Title: {scraped_data['title']}
 Content:
 {scraped_data['text'][:15000]}
 
-Please analyze this content and extract relevant information to create an AVID report. Return ONLY a valid JSON object with the following structure (all fields are optional except those marked as required):
+Please analyze this content and extract relevant information to create an AVID report. Return ONLY a valid JSON object with the following structure (all fields are optional unless explicitly noted):
 
 {{
-  "report_id": "string (required)",
+    "report_id": "string (optional; omit if unknown or unpublished)",
   "affects": {{
     "developer": ["list of developers"],
     "deployer": ["list of deployers"],
@@ -220,12 +221,12 @@ Please analyze this content and extract relevant information to create an AVID r
     "type": "Issue|Advisory|Measurement|Detection",
     "description": {{
       "lang": "eng",
-      "value": "description text"
+            "value": "short title (required, concise, ideally <= 12 words)"
     }}
   }},
-  "description": {{
+    "description": {{
     "lang": "eng",
-    "value": "high-level description"
+        "value": "full descriptive summary paragraph"
   }},
   "references": [
     {{
@@ -239,12 +240,46 @@ Please analyze this content and extract relevant information to create an AVID r
 Important guidelines:
 - Be specific and accurate
 - Extract actual names, organizations, and technical details from the content
-- For the report_id, use format AVID-{date.today().year}-R-XXXX where XXXX is a random 4-digit number
+- problemtype.description.value MUST be a short title, not a paragraph. Summarize the actual issue concisely, do NOT mention the reporter, or that it's from a URL or article. You can mention the product as needed. Focus on the core vulnerability or issue.
+- description.value should contain the detailed narrative description
 - MUST include the source URL ({scraped_data['url']}) in references with an appropriate label
-- If information is not available in the content, omit that field entirely (except report_id which is required)
+- If information is not available in the content, omit that field entirely
 - Return ONLY the JSON object, no additional text or explanation
 """
         return prompt
+
+    def _normalize_problemtype_title(
+        self, parsed_data: dict[str, Any], scraped_data: dict[str, Any]
+    ) -> dict[str, Any]:
+        """Ensure problemtype.description.value is a short title, not a long description."""
+        problemtype = parsed_data.get("problemtype")
+        if not isinstance(problemtype, dict):
+            return parsed_data
+
+        description_obj = problemtype.get("description")
+        if not isinstance(description_obj, dict):
+            return parsed_data
+
+        current_title = description_obj.get("value")
+        page_title = (scraped_data.get("title") or "").strip()
+
+        if not isinstance(current_title, str) or not current_title.strip():
+            if page_title:
+                description_obj["value"] = page_title[:120].strip()
+            return parsed_data
+
+        normalized = " ".join(current_title.split())
+
+        too_long = len(normalized) > 120 or len(normalized.split()) > 16
+        if too_long and page_title:
+            normalized = page_title
+
+        normalized = re.split(r"[.!?]", normalized, maxsplit=1)[0].strip()
+        if len(normalized) > 120:
+            normalized = normalized[:117].rstrip() + "..."
+
+        description_obj["value"] = normalized
+        return parsed_data
 
     def _parse_ai_response(self, response_text: str) -> dict[str, Any]:
         """
@@ -473,6 +508,9 @@ Important guidelines:
 
                 # Step 4: Parse AI response
                 parsed_data = self._parse_ai_response(ai_response)
+                parsed_data = self._normalize_problemtype_title(
+                    parsed_data, scraped_data
+                )
                 print("Successfully parsed AI response")
 
                 # Step 5: Build Report object
