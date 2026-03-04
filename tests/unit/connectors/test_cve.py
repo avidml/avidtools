@@ -69,7 +69,10 @@ class TestCVEConnector:
         assert vuln.problemtype.classof == ClassEnum.cve
         assert vuln.problemtype.type == TypeEnum.advisory
         assert vuln.problemtype.description.lang == "eng"
-        assert vuln.problemtype.description.value == "Sample CVE title"
+        assert (
+            vuln.problemtype.description.value
+            == "Sample CVE title (CVE-2023-12345)"
+        )
 
     def test_convert_cve_to_vuln_with_affected_products(self, sample_cve_data):
         """Test CVE conversion with affected product data."""
