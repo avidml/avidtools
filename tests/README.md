@@ -72,7 +72,6 @@ Common test fixtures are defined in `tests/conftest.py`:
 - `sample_atlas_case_study`: Mock ATLAS case study data
 - `sample_cve_data`: Mock CVE data  
 - `mock_requests_get`: Mock HTTP requests
-- `mock_nvdlib_search`: Mock NVD library calls
 
 ### Test Categories
 

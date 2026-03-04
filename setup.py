@@ -11,6 +11,6 @@ setup(
     install_requires=[
         'pydantic>=2.11.5',
         'typing-extensions>=4.13.2',
-        'nvdlib>=0.8.1'
+        'requests>=2.31.0'
     ],
 )
