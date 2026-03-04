@@ -1,4 +1,4 @@
-.PHONY: all setup setup-submodules update-submodules install update clean test lint format help
+.PHONY: all setup setup-submodules update-submodules install update clean test lint format help ruff
 
 # Default target
 all: help
@@ -43,6 +43,8 @@ linting:
 	@echo "Running ruff check..."
 	poetry run ruff check avidtools
 	@echo "ruff check complete"
+
+ruff: linting
 
 # Run linter
 lint: typecheck linting

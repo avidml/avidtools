@@ -542,6 +542,14 @@ Important guidelines:
             hostname = hostname[4:]
         return hostname
 
+    def _meta_content_as_text(self, tag: Any) -> Optional[str]:
+        """Return meta content as text when available and string-like."""
+        raw_content = tag.get("content") if tag is not None else None
+        if isinstance(raw_content, str):
+            content = raw_content.strip()
+            return content or None
+        return None
+
     def _extract_author_person(self, scraped_data: dict[str, Any]) -> Optional[str]:
         """Extract an article author person from JSON-LD, metadata, or byline text."""
         try:
@@ -594,8 +602,9 @@ Important guidelines:
             ]
             for attr, key in meta_keys:
                 tag = soup.find("meta", attrs={attr: key})
-                if tag and tag.get("content"):
-                    candidates.append(tag.get("content", "").strip())
+                content = self._meta_content_as_text(tag)
+                if content:
+                    candidates.append(content)
 
             byline_nodes = soup.select('[class*="author" i], [class*="byline" i], [rel="author"]')
             for node in byline_nodes[:8]:
@@ -665,10 +674,9 @@ Important guidelines:
             ]
             for attr, key in meta_keys:
                 tag = soup.find("meta", attrs={attr: key})
-                if tag and tag.get("content"):
-                    content = tag.get("content", "").strip()
-                    if content:
-                        return content
+                content = self._meta_content_as_text(tag)
+                if content:
+                    return content
 
         return self._infer_credit_from_url(url)
 
