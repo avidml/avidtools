@@ -10,6 +10,7 @@ jobs:
     permissions:
       contents: write
       id-token: write
+      pull-requests: write
     
     steps:
       - name: Checkout repository
@@ -91,3 +92,52 @@ jobs:
 
       - name: Publish to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
+
+      - name: Checkout main branch for version sync
+        if: steps.version_check.outputs.version_mismatch == 'true'
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Prepare version bump commit
+        if: steps.version_check.outputs.version_mismatch == 'true'
+        id: prepare_version_pr
+        run: |
+          VERSION="${{ steps.version_check.outputs.tag_version }}"
+          poetry version "$VERSION"
+
+          if git diff --quiet pyproject.toml; then
+            echo "has_changes=false" >> $GITHUB_OUTPUT
+            echo "✅ main already has version $VERSION"
+          else
+            echo "has_changes=true" >> $GITHUB_OUTPUT
+            echo "✅ Prepared version bump to $VERSION for PR"
+          fi
+
+      - name: Open version bump PR to main
+        if: steps.prepare_version_pr.outputs.has_changes == 'true'
+        id: create_version_pr
+        uses: peter-evans/create-pull-request@v7
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          commit-message: "chore(release): bump version to ${{ steps.version_check.outputs.tag_version }}"
+          title: "chore(release): bump version to ${{ steps.version_check.outputs.tag_version }}"
+          body: |
+            Sync package version on `main` after release publish.
+
+            - Release tag: `${{ github.event.release.tag_name }}`
+            - Updated `pyproject.toml` version: `${{ steps.version_check.outputs.tag_version }}`
+          branch: "chore/release-version-${{ steps.version_check.outputs.tag_version }}"
+          base: main
+          add-paths: |
+            pyproject.toml
+          delete-branch: true
+
+      - name: Enable auto-merge for version bump PR
+        if: steps.create_version_pr.outputs.pull-request-number
+        uses: peter-evans/enable-pull-request-automerge@v3
+        with:
+          token: ${{ secrets.GH_PUBLISH_TOKEN }}
+          pull-request-number: ${{ steps.create_version_pr.outputs.pull-request-number }}
+          merge-method: squash
