@@ -70,21 +70,19 @@ def _extract_field_cells(soup: BeautifulSoup) -> dict[str, BeautifulSoup]:
 
 
 def _extract_timeline_published_on(timeline_text: str) -> Optional[str]:
-    for pattern in (
-        r"Published\s+on\s+([A-Za-z]+\s+\d{1,2},\s+\d{4})",
+    match = re.search(
         r"Disclosed\s+to\s+Vendor\s+on\s+([A-Za-z]+\s+\d{1,2},\s+\d{4})",
-    ):
-        match = re.search(pattern, timeline_text, flags=re.IGNORECASE)
-        if not match:
-            continue
+        timeline_text,
+        flags=re.IGNORECASE,
+    )
+    if not match:
+        return None
 
-        raw_date = match.group(1)
-        try:
-            return datetime.strptime(raw_date, "%B %d, %Y").date().isoformat()
-        except ValueError:
-            continue
-
-    return None
+    raw_date = match.group(1)
+    try:
+        return datetime.strptime(raw_date, "%B %d, %Y").date().isoformat()
+    except ValueError:
+        return None
 
 
 def _field_text(field_cells: dict[str, BeautifulSoup], label: str) -> str:
