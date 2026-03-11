@@ -105,7 +105,10 @@ def _infer_deployer(
     deployer_values = to_list(affects.get("deployer"))
 
     if any(
-        value.strip().lower().startswith("together/")
+        (
+            value.strip().lower() == "together"
+            or value.strip().lower().startswith("together/")
+        )
         for value in deployer_values
     ):
         return "Together AI"
@@ -123,7 +126,7 @@ def apply_model_developer_mapping(
     report: dict,
     model_names: Optional[List[str]] = None,
 ) -> bool:
-    """Normalize developer/deployer fields for a report when inference matches."""
+    """Normalize developer/deployer fields when inference matches."""
 
     affects = report.setdefault("affects", {})
     if model_names is None:
