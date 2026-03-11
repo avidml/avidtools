@@ -21,6 +21,7 @@ from avidtools.datamodels.components import (  # noqa: E402
     LangValue,
     Problemtype,
     Reference,
+    TypeEnum,
 )
 from avidtools.datamodels.report import Report  # noqa: E402
 
@@ -167,6 +168,7 @@ def scrape_disclosure_to_report(disclosure_url: str) -> Optional[Report]:
     if problem_title:
         problemtype = Problemtype(
             classof=ClassEnum.third_party,
+            type=TypeEnum.advisory,
             description=LangValue(lang="eng", value=problem_title),
         )
 
