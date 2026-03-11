@@ -84,6 +84,8 @@ def _infer_developer_from_models(model_names: List[str]) -> Optional[str]:
 
     for model_name in model_names:
         normalized = model_name.lower()
+        if "gpt" in normalized:
+            return "OpenAI"
         if "kimi" in normalized:
             return "Moonshot AI"
         if "llama" in normalized:
@@ -104,6 +106,8 @@ def _infer_deployer(
     affects = report.get("affects", {})
     deployer_values = to_list(affects.get("deployer"))
 
+    has_gpt_oss_model = any("gpt-oss" in model.lower() for model in model_names)
+
     if any(
         (
             value.strip().lower() == "together"
@@ -113,7 +117,7 @@ def _infer_deployer(
     ):
         return "Together AI"
 
-    if any("gpt" in model.lower() for model in model_names):
+    if any("gpt" in model.lower() for model in model_names) and not has_gpt_oss_model:
         return "OpenAI"
 
     if any("openai" in value.lower() for value in deployer_values):
@@ -182,17 +186,24 @@ def apply_openai_system_artifact_type(
 
     updated = False
     gpt_artifact_found = False
+    gpt_oss_artifact_found = False
 
     for artifact in artifacts:
         if not isinstance(artifact, dict):
             continue
         artifact_name = str(artifact.get("name", ""))
+        if "gpt-oss" in artifact_name.lower():
+            if artifact.get("type") != "Model":
+                artifact["type"] = "Model"
+                updated = True
+            gpt_oss_artifact_found = True
+            continue
         if "gpt" in artifact_name.lower():
             artifact["type"] = "System"
             updated = True
             gpt_artifact_found = True
 
-    if openai_context and not gpt_artifact_found:
+    if openai_context and not gpt_artifact_found and not gpt_oss_artifact_found:
         for artifact in artifacts:
             if isinstance(artifact, dict):
                 artifact["type"] = "System"
