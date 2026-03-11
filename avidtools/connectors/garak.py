@@ -645,7 +645,8 @@ def _apply_litellm_deployer_mapping(report: dict):
     mapped = []
     changed = False
     for value in deployer:
-        if value.strip().lower() == "litellm":
+        normalized = value.strip().lower()
+        if normalized == "litellm" or normalized == "together":
             mapped.append("Together AI")
             changed = True
         else:
@@ -892,7 +893,10 @@ def normalize_file(
     dry_run: bool = False,
     cache_path: Path = CACHE_PATH,
 ) -> int:
-    """Normalize a Garak JSON/JSONL input file and optionally rewrite in place."""
+    """Normalize a Garak JSON/JSONL input file.
+
+    Optionally rewrites the file in place unless dry-run is enabled.
+    """
 
     reports, shape = _load_reports(input_path)
 
