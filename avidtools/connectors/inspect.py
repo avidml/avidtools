@@ -4,7 +4,8 @@ import json
 import re
 from html import unescape
 from pathlib import Path
-from typing import Any, List, Tuple
+from typing import Any, List, Optional, Tuple
+from urllib.parse import quote
 from urllib.error import HTTPError, URLError
 from urllib.request import urlopen
 
@@ -78,7 +79,55 @@ def import_eval_log(file_path: str) -> Any:
     return read_eval_log(file_path)
 
 
-def convert_eval_log(file_path: str, normalize: bool = False) -> List[Report]:
+def upload_eval_log_to_s3(
+    file_path: str,
+    bucket: str,
+    key_prefix: str = "",
+    region: Optional[str] = None,
+    endpoint_url: Optional[str] = None,
+) -> str:
+    """Upload an Inspect eval log to S3 and return its URL."""
+
+    try:
+        import boto3
+    except ImportError as error:
+        raise ImportError(
+            "boto3 package is required for S3 upload functionality"
+        ) from error
+
+    source_path = Path(file_path)
+    cleaned_prefix = key_prefix.strip("/")
+    key = (
+        f"{cleaned_prefix}/{source_path.name}"
+        if cleaned_prefix
+        else source_path.name
+    )
+
+    client_kwargs = {}
+    if region:
+        client_kwargs["region_name"] = region
+    if endpoint_url:
+        client_kwargs["endpoint_url"] = endpoint_url
+
+    s3_client = boto3.client("s3", **client_kwargs)
+    s3_client.upload_file(str(source_path), bucket, key)
+
+    quoted_key = quote(key, safe="/")
+    if endpoint_url:
+        return f"{endpoint_url.rstrip('/')}/{bucket}/{quoted_key}"
+    if region and region != "us-east-1":
+        return f"https://{bucket}.s3.{region}.amazonaws.com/{quoted_key}"
+    return f"https://{bucket}.s3.amazonaws.com/{quoted_key}"
+
+
+def convert_eval_log(
+    file_path: str,
+    normalize: bool = False,
+    s3_bucket: Optional[str] = None,
+    s3_key_prefix: str = "",
+    s3_region: Optional[str] = None,
+    s3_endpoint_url: Optional[str] = None,
+) -> List[Report]:
     """Convert an Inspect evaluation log into a list of AVID Report objects.
 
     Parameters
@@ -88,6 +137,15 @@ def convert_eval_log(file_path: str, normalize: bool = False) -> List[Report]:
     normalize : bool
         If True, run normalize steps that fetch benchmark overview/scoring
         and apply report normalizations.
+    s3_bucket : Optional[str]
+        If set, upload the eval log file to this S3 bucket and use that URL
+        in report references.
+    s3_key_prefix : str
+        Optional key prefix to use when uploading eval logs to S3.
+    s3_region : Optional[str]
+        Optional AWS region for S3 upload URL construction.
+    s3_endpoint_url : Optional[str]
+        Optional custom S3 endpoint URL.
 
     Returns
     -------
@@ -95,89 +153,113 @@ def convert_eval_log(file_path: str, normalize: bool = False) -> List[Report]:
         A list of AVID Report objects created from the evaluation log.
     """
     eval_log = import_eval_log(file_path)
-    reports = []
+    eval_log_reference_url = None
 
-    for sample in eval_log.samples:
-        report = Report()
-        model_prefix = eval_log.eval.model.split("/", 1)[0]
-        developer_name = human_readable_name[model_prefix]
-        task = eval_log.eval.task.rsplit("/", 1)[-1]
-        model_name = eval_log.eval.model.rsplit("/", 1)[-1]
-        report.affects = Affects(
-            developer=[developer_name],
-            deployer=[eval_log.eval.model],
-            artifacts=[Artifact(type=ArtifactTypeEnum.model, name=model_name)],
+    if s3_bucket:
+        eval_log_reference_url = upload_eval_log_to_s3(
+            file_path=file_path,
+            bucket=s3_bucket,
+            key_prefix=s3_key_prefix,
+            region=s3_region,
+            endpoint_url=s3_endpoint_url,
         )
 
-        description_value = (
-            f"Evaluation of the LLM {model_name} on the {task} "
-            f"benchmark using Inspect Evals"
-        )
-        report.problemtype = Problemtype(
-            classof=ClassEnum.llm,
-            type=TypeEnum.measurement,
-            description=LangValue(lang="eng", value=description_value),
-        )
+    report = Report()
+    model_prefix = eval_log.eval.model.split("/", 1)[0]
+    developer_name = human_readable_name.get(
+        model_prefix,
+        model_prefix.replace("-", " ").title(),
+    )
+    task = eval_log.eval.task.rsplit("/", 1)[-1]
+    model_name = eval_log.eval.model.rsplit("/", 1)[-1]
+    report.affects = Affects(
+        developer=[developer_name],
+        deployer=[eval_log.eval.model],
+        artifacts=[Artifact(type=ArtifactTypeEnum.model, name=model_name)],
+    )
 
-        dataset_label = (
-            f"Inspect Evaluation Log for dataset: {eval_log.eval.dataset.name}"
+    description_value = (
+        f"Evaluation of the LLM {model_name} on the {task} "
+        f"benchmark using Inspect Evals"
+    )
+    report.problemtype = Problemtype(
+        classof=ClassEnum.llm,
+        type=TypeEnum.measurement,
+        description=LangValue(lang="eng", value=description_value),
+    )
+
+    dataset_label = (
+        f"Inspect Evaluation Log for dataset: {eval_log.eval.dataset.name}"
+    )
+    dataset_location = (
+        eval_log.eval.dataset.location
+        if getattr(eval_log.eval.dataset, "location", None)
+        else Path(file_path).resolve().as_uri()
+    )
+    report.references = [
+        Reference(
+            type="source",
+            label=dataset_label,
+            url=eval_log_reference_url or dataset_location,
         )
-        report.references = [
-            Reference(
-                type="source",
-                label=dataset_label,
-                url=eval_log.eval.dataset.location,
-            )
+    ]
+
+    metrics = ", ".join(
+        [
+            metric.name.rsplit("/", 1)[-1]
+            for scorer in eval_log.eval.scorers
+            for metric in scorer.metrics
         ]
-
-        metrics = ", ".join(
-            [
-                metric.name.rsplit("/", 1)[-1]
-                for scorer in eval_log.eval.scorers
-                for metric in scorer.metrics
-            ]
-        )
-        scorer_desc = "|".join(
-            [
-                f"scorer: {scorer.name}, metrics: {metrics}"
-                for scorer in eval_log.eval.scorers
-            ]
-        )
-        report.metrics = []
-        for sc in eval_log.results.scores:
-            for k, v in sc.metrics.items():
-                report.metrics.append(
-                    Metric(
-                        name=k,
-                        detection_method=Detection(
-                            type=MethodEnum.test, name=sc.name
-                        ),
-                        results={"value": v.value, "scorer": sc.name},
-                    )
+    )
+    scorer_desc = "|".join(
+        [
+            f"scorer: {scorer.name}, metrics: {metrics}"
+            for scorer in eval_log.eval.scorers
+        ]
+    )
+    report.metrics = []
+    score_lines = []
+    for sc in eval_log.results.scores:
+        metric_parts = []
+        for k, v in sc.metrics.items():
+            value = v.value
+            report.metrics.append(
+                Metric(
+                    name=k,
+                    detection_method=Detection(
+                        type=MethodEnum.test, name=sc.name
+                    ),
+                    results={"value": value, "scorer": sc.name},
                 )
-
-        full_description = (
-            f"Evaluation of the LLM {model_name} on the {task} "
-            f"benchmark using Inspect Evals\n\n"
-            f"Sample input: {sample.input}\n\n"
-            f"Model output: {sample.output}\n\n"
-            f"Scorer: {scorer_desc}\n\n"
-            f"Score: {sample.score}"
-        )
-        report.description = LangValue(lang="eng", value=full_description)
-
-        if normalize:
-            report_payload = (
-                report.model_dump()
-                if hasattr(report, "model_dump")
-                else report.dict()
             )
-            normalize_report_data(report_payload)
-            report = Report(**report_payload)
+            metric_parts.append(f"{k}: {value}")
+        score_lines.append(f"{sc.name}: {', '.join(metric_parts)}")
 
-        reports.append(report)
+    first_sample = eval_log.samples[0] if eval_log.samples else None
+    sample_input = first_sample.input if first_sample else "N/A"
+    sample_output = first_sample.output if first_sample else "N/A"
+    eval_scores_text = "\n".join(score_lines) if score_lines else "N/A"
 
-    return reports
+    full_description = (
+        f"Evaluation of the LLM {model_name} on the {task} "
+        f"benchmark using Inspect Evals\n\n"
+        f"Sample input: {sample_input}\n\n"
+        f"Model output: {sample_output}\n\n"
+        f"Scorer: {scorer_desc}\n\n"
+        f"Evaluation scores:\n{eval_scores_text}"
+    )
+    report.description = LangValue(lang="eng", value=full_description)
+
+    if normalize:
+        report_payload = (
+            report.model_dump()
+            if hasattr(report, "model_dump")
+            else report.dict()
+        )
+        normalize_report_data(report_payload)
+        report = Report(**report_payload)
+
+    return [report]
 
 
 def _clean_html_to_text(fragment: str) -> str:

@@ -189,7 +189,7 @@ class TestInspectConnector:
 
     @patch('avidtools.connectors.inspect.import_eval_log')
     def test_convert_eval_log_multiple_samples(self, mock_import):
-        """Test conversion with multiple samples."""
+        """Multiple samples should still produce one aggregated report."""
         mock_eval_log = MockEvalLog()
         mock_eval_log.samples = [
             Mock(
@@ -207,10 +207,10 @@ class TestInspectConnector:
         
         reports = convert_eval_log("/path/to/eval.json")
         
-        assert len(reports) == 2
+        assert len(reports) == 1
         assert all(isinstance(r, Report) for r in reports)
         assert "Question 1" in reports[0].description.value
-        assert "Question 2" in reports[1].description.value
+        assert "Question 2" not in reports[0].description.value
 
     @patch('avidtools.connectors.inspect.import_eval_log')
     def test_convert_eval_log_different_model(self, mock_import):
@@ -226,6 +226,21 @@ class TestInspectConnector:
         assert report.affects.deployer == ["anthropic/claude-3"]
         assert report.affects.artifacts[0].name == "claude-3"
 
+    @patch('avidtools.connectors.inspect.import_eval_log')
+    def test_convert_eval_log_missing_dataset_location_uses_file_uri(
+        self,
+        mock_import,
+    ):
+        """Missing dataset location should fall back to local file URI."""
+        mock_eval_log = MockEvalLog()
+        mock_eval_log.eval.dataset.location = None
+        mock_import.return_value = mock_eval_log
+
+        reports = convert_eval_log("/path/to/eval.json")
+
+        assert len(reports) == 1
+        assert reports[0].references[0].url.startswith("file://")
+
     @patch('avidtools.connectors.inspect.normalize_report_data')
     @patch('avidtools.connectors.inspect.import_eval_log')
     def test_convert_eval_log_with_normalize_enabled(
@@ -233,7 +248,7 @@ class TestInspectConnector:
         mock_import,
         mock_normalize,
     ):
-        """Normalize mode should call normalize_report_data for each sample."""
+        """Normalize mode should call normalize_report_data once per eval."""
         mock_eval_log = MockEvalLog()
         mock_import.return_value = mock_eval_log
 
@@ -241,6 +256,37 @@ class TestInspectConnector:
 
         assert len(reports) == 1
         assert mock_normalize.call_count == 1
+
+    @patch('avidtools.connectors.inspect.upload_eval_log_to_s3')
+    @patch('avidtools.connectors.inspect.import_eval_log')
+    def test_convert_eval_log_uses_s3_reference_url(
+        self,
+        mock_import,
+        mock_upload,
+    ):
+        """S3 upload URL should be used in references when configured."""
+        mock_eval_log = MockEvalLog()
+        mock_import.return_value = mock_eval_log
+        mock_upload.return_value = "https://bucket.s3.amazonaws.com/run.eval"
+
+        reports = convert_eval_log(
+            "/path/to/eval.json",
+            s3_bucket="bucket",
+            s3_key_prefix="inspect-evals",
+            s3_region="us-east-1",
+        )
+
+        assert len(reports) == 1
+        assert reports[0].references[0].url == (
+            "https://bucket.s3.amazonaws.com/run.eval"
+        )
+        mock_upload.assert_called_once_with(
+            file_path="/path/to/eval.json",
+            bucket="bucket",
+            key_prefix="inspect-evals",
+            region="us-east-1",
+            endpoint_url=None,
+        )
 
     @patch('avidtools.connectors.inspect.urlopen')
     def test_fetch_sections_raises_on_unresolved_benchmark(self, mock_urlopen):
