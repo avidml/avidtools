@@ -47,6 +47,19 @@ human_readable_name = {
     "together": "Together AI",
 }
 
+_together_developer_name = {
+    "openai": "OpenAI",
+    "meta-llama": "Meta",
+    "mistralai": "Mistral AI",
+    "google": "Google",
+    "deepseek-ai": "DeepSeek",
+    "qwen": "Qwen",
+    "moonshotai": "Moonshot AI",
+    "minimaxai": "Minimax",
+    "liquidai": "Liquid AI",
+    "essentialai": "Essential AI",
+}
+
 SITE_ROOT = "https://ukgovernmentbeis.github.io/inspect_evals"
 CYSE2_URL = (
     "https://ukgovernmentbeis.github.io/inspect_evals/evals/"
@@ -78,6 +91,29 @@ def import_eval_log(file_path: str) -> Any:
         The loaded evaluation log.
     """
     return read_eval_log(file_path)
+
+
+def _resolve_parties_from_model(eval_model: str) -> Tuple[str, str, str]:
+    """Resolve developer, deployer, and artifact model name from eval model."""
+
+    if eval_model.startswith("together/"):
+        parts = eval_model.split("/")
+        if len(parts) >= 3:
+            together_dev = parts[1]
+            model_name = parts[-1]
+            developer_name = _together_developer_name.get(
+                together_dev.lower(),
+                together_dev,
+            )
+            return developer_name, "Together AI", model_name
+
+    model_prefix = eval_model.split("/", 1)[0]
+    developer_name = human_readable_name.get(
+        model_prefix,
+        model_prefix.replace("-", " ").title(),
+    )
+    model_name = eval_model.rsplit("/", 1)[-1]
+    return developer_name, eval_model, model_name
 
 
 def upload_eval_log_to_s3(
@@ -213,16 +249,13 @@ def convert_eval_log(
         )
 
     report = Report(data_version="0.3.1")
-    model_prefix = eval_log.eval.model.split("/", 1)[0]
-    developer_name = human_readable_name.get(
-        model_prefix,
-        model_prefix.replace("-", " ").title(),
+    developer_name, deployer_name, model_name = _resolve_parties_from_model(
+        eval_log.eval.model
     )
     task = eval_log.eval.task.rsplit("/", 1)[-1]
-    model_name = eval_log.eval.model.rsplit("/", 1)[-1]
     report.affects = Affects(
         developer=[developer_name],
-        deployer=[eval_log.eval.model],
+        deployer=[deployer_name],
         artifacts=[Artifact(type=ArtifactTypeEnum.model, name=model_name)],
     )
 

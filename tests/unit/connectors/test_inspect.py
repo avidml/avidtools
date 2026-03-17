@@ -232,6 +232,34 @@ class TestInspectConnector:
         assert report.affects.artifacts[0].name == "claude-3"
 
     @patch('avidtools.connectors.inspect.import_eval_log')
+    def test_convert_eval_log_together_model_mapping(self, mock_import):
+        """Together model IDs should map developer and deployer correctly."""
+        mock_eval_log = MockEvalLog()
+        mock_eval_log.eval.model = "together/MiniMaxAI/MiniMax-M2.5"
+        mock_import.return_value = mock_eval_log
+
+        reports = convert_eval_log("/path/to/eval.json")
+        report = reports[0]
+
+        assert report.affects.developer == ["MiniMax"]
+        assert report.affects.deployer == ["Together AI"]
+        assert report.affects.artifacts[0].name == "MiniMax-M2.5"
+
+    @patch('avidtools.connectors.inspect.import_eval_log')
+    def test_convert_eval_log_together_openai_model_mapping(self, mock_import):
+        """Together OpenAI model IDs should map developer to OpenAI."""
+        mock_eval_log = MockEvalLog()
+        mock_eval_log.eval.model = "together/openai/gpt-oss-20b"
+        mock_import.return_value = mock_eval_log
+
+        reports = convert_eval_log("/path/to/eval.json")
+        report = reports[0]
+
+        assert report.affects.developer == ["OpenAI"]
+        assert report.affects.deployer == ["Together AI"]
+        assert report.affects.artifacts[0].name == "gpt-oss-20b"
+
+    @patch('avidtools.connectors.inspect.import_eval_log')
     def test_convert_eval_log_missing_dataset_location_uses_file_uri(
         self,
         mock_import,
