@@ -4,7 +4,7 @@ import json
 import re
 from html import unescape
 from pathlib import Path
-from typing import Any, List, Optional, Tuple
+from typing import Any, Iterable, List, Optional, Tuple
 from urllib.parse import quote
 from urllib.error import HTTPError, URLError
 from urllib.request import urlopen
@@ -44,6 +44,7 @@ human_readable_name = {
     "meta-llama": "Meta",
     "mistralai": "Mistral AI",
     "cohere": "Cohere",
+    "together": "Together AI",
 }
 
 SITE_ROOT = "https://ukgovernmentbeis.github.io/inspect_evals"
@@ -85,6 +86,7 @@ def upload_eval_log_to_s3(
     key_prefix: str = "",
     region: Optional[str] = None,
     endpoint_url: Optional[str] = None,
+    skip_if_exists: bool = True,
 ) -> str:
     """Upload an Inspect eval log to S3 and return its URL."""
 
@@ -110,7 +112,13 @@ def upload_eval_log_to_s3(
         client_kwargs["endpoint_url"] = endpoint_url
 
     s3_client = boto3.client("s3", **client_kwargs)
-    s3_client.upload_file(str(source_path), bucket, key)
+    if skip_if_exists:
+        try:
+            s3_client.head_object(Bucket=bucket, Key=key)
+        except Exception:
+            s3_client.upload_file(str(source_path), bucket, key)
+    else:
+        s3_client.upload_file(str(source_path), bucket, key)
 
     quoted_key = quote(key, safe="/")
     if endpoint_url:
@@ -118,6 +126,46 @@ def upload_eval_log_to_s3(
     if region and region != "us-east-1":
         return f"https://{bucket}.s3.{region}.amazonaws.com/{quoted_key}"
     return f"https://{bucket}.s3.amazonaws.com/{quoted_key}"
+
+
+def _report_payload(report: Report) -> dict:
+    if hasattr(report, "model_dump"):
+        payload = report.model_dump(mode="json")
+    else:
+        payload = report.dict()
+
+    metrics = payload.get("metrics")
+    if isinstance(metrics, list):
+        flat_metrics = []
+        for metric in metrics:
+            if not isinstance(metric, dict):
+                continue
+            detection = metric.get("detection_method", {})
+            results = metric.get("results", {})
+            scorer = results.get("scorer") or detection.get("name")
+            flat_metrics.append(
+                {
+                    "scorer": scorer,
+                    "metrics": metric.get("name"),
+                    "value": results.get("value"),
+                }
+            )
+        payload["metrics"] = flat_metrics
+
+    return payload
+
+
+def write_reports_jsonl(reports: Iterable[Report], output_path: Path) -> int:
+    """Write reports to a JSONL file and return count written."""
+
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    count = 0
+    with output_path.open("w", encoding="utf-8") as file_obj:
+        for report in reports:
+            file_obj.write(json.dumps(_report_payload(report)))
+            file_obj.write("\n")
+            count += 1
+    return count
 
 
 def convert_eval_log(
@@ -164,7 +212,7 @@ def convert_eval_log(
             endpoint_url=s3_endpoint_url,
         )
 
-    report = Report()
+    report = Report(data_version="0.3.1")
     model_prefix = eval_log.eval.model.split("/", 1)[0]
     developer_name = human_readable_name.get(
         model_prefix,
@@ -188,9 +236,8 @@ def convert_eval_log(
         description=LangValue(lang="eng", value=description_value),
     )
 
-    dataset_label = (
-        f"Inspect Evaluation Log for dataset: {eval_log.eval.dataset.name}"
-    )
+    dataset_name = getattr(eval_log.eval.dataset, "name", None) or task
+    dataset_label = f"Inspect Evaluation Log for dataset: {dataset_name}"
     dataset_location = (
         eval_log.eval.dataset.location
         if getattr(eval_log.eval.dataset, "location", None)
@@ -260,6 +307,30 @@ def convert_eval_log(
         report = Report(**report_payload)
 
     return [report]
+
+
+def convert_eval_logs(
+    file_paths: Iterable[Path],
+    normalize: bool = False,
+    s3_bucket: Optional[str] = None,
+    s3_key_prefix: str = "",
+    s3_region: Optional[str] = None,
+    s3_endpoint_url: Optional[str] = None,
+) -> List[Report]:
+    """Convert multiple Inspect eval logs into AVID reports."""
+
+    all_reports: List[Report] = []
+    for file_path in file_paths:
+        reports = convert_eval_log(
+            str(file_path),
+            normalize=normalize,
+            s3_bucket=s3_bucket,
+            s3_key_prefix=s3_key_prefix,
+            s3_region=s3_region,
+            s3_endpoint_url=s3_endpoint_url,
+        )
+        all_reports.extend(reports)
+    return all_reports
 
 
 def _clean_html_to_text(fragment: str) -> str:
@@ -443,6 +514,8 @@ def _first_line(text: str) -> str:
 
 def normalize_report_data(report: dict):
     """Apply Inspect normalize transformations to a report dictionary."""
+
+    report.setdefault("data_version", "0.3.1")
 
     problem_desc = (
         report.get("problemtype", {})
