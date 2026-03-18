@@ -3,12 +3,15 @@ Unit tests for Inspect connector.
 """
 
 import pytest
+from pathlib import Path
 from unittest.mock import Mock, patch
 from urllib.error import URLError
 
 from avidtools.connectors.inspect import (
     import_eval_log,
     convert_eval_log,
+    convert_eval_logs,
+    write_reports_jsonl,
     human_readable_name,
     normalize_report_data,
     UnsupportedInspectBenchmarkError,
@@ -55,6 +58,10 @@ class MockEvalLog:
         self.results = Mock()
         self.results.scores = [mock_score]
 
+        # Stats with completion timestamp
+        self.stats = Mock()
+        self.stats.completed_at = "2024-03-15T10:30:00+00:00"
+
 
 class TestInspectConnector:
     """Test cases for Inspect connector functions."""
@@ -88,6 +95,7 @@ class TestInspectConnector:
         assert human_readable_name["google"] == "Google"
         assert human_readable_name["huggingface"] == "Hugging Face"
         assert human_readable_name["meta-llama"] == "Meta"
+        assert human_readable_name["together"] == "Together AI"
 
     @patch('avidtools.connectors.inspect.import_eval_log')
     def test_convert_eval_log_basic(self, mock_import):
@@ -103,6 +111,20 @@ class TestInspectConnector:
         
         report = reports[0]
         assert report.data_type == "AVID"
+        assert report.data_version == "0.3.1"
+        assert report.reported_date is not None
+
+    @patch('avidtools.connectors.inspect.import_eval_log')
+    def test_convert_eval_log_reported_date(self, mock_import):
+        """Test that reported_date is set from eval log completed_at."""
+        from datetime import date
+        mock_eval_log = MockEvalLog()
+        mock_import.return_value = mock_eval_log
+
+        reports = convert_eval_log("/path/to/eval.json")
+        report = reports[0]
+
+        assert report.reported_date == date(2024, 3, 15)
 
     @patch('avidtools.connectors.inspect.import_eval_log')
     def test_convert_eval_log_affects(self, mock_import):
@@ -227,6 +249,34 @@ class TestInspectConnector:
         assert report.affects.artifacts[0].name == "claude-3"
 
     @patch('avidtools.connectors.inspect.import_eval_log')
+    def test_convert_eval_log_together_model_mapping(self, mock_import):
+        """Together model IDs should map developer and deployer correctly."""
+        mock_eval_log = MockEvalLog()
+        mock_eval_log.eval.model = "together/MiniMaxAI/MiniMax-M2.5"
+        mock_import.return_value = mock_eval_log
+
+        reports = convert_eval_log("/path/to/eval.json")
+        report = reports[0]
+
+        assert report.affects.developer == ["Minimax"]
+        assert report.affects.deployer == ["Together AI"]
+        assert report.affects.artifacts[0].name == "MiniMax-M2.5"
+
+    @patch('avidtools.connectors.inspect.import_eval_log')
+    def test_convert_eval_log_together_openai_model_mapping(self, mock_import):
+        """Together OpenAI model IDs should map developer to OpenAI."""
+        mock_eval_log = MockEvalLog()
+        mock_eval_log.eval.model = "together/openai/gpt-oss-20b"
+        mock_import.return_value = mock_eval_log
+
+        reports = convert_eval_log("/path/to/eval.json")
+        report = reports[0]
+
+        assert report.affects.developer == ["OpenAI"]
+        assert report.affects.deployer == ["Together AI"]
+        assert report.affects.artifacts[0].name == "gpt-oss-20b"
+
+    @patch('avidtools.connectors.inspect.import_eval_log')
     def test_convert_eval_log_missing_dataset_location_uses_file_uri(
         self,
         mock_import,
@@ -277,6 +327,7 @@ class TestInspectConnector:
         )
 
         assert len(reports) == 1
+        assert len(reports[0].references) == 1
         assert reports[0].references[0].url == (
             "https://bucket.s3.amazonaws.com/run.eval"
         )
@@ -287,6 +338,40 @@ class TestInspectConnector:
             region="us-east-1",
             endpoint_url=None,
         )
+
+    @patch('avidtools.connectors.inspect.convert_eval_log')
+    def test_convert_eval_logs_aggregates_reports(self, mock_convert):
+        """Batch conversion helper should aggregate per-file results."""
+        report1 = Report()
+        report2 = Report()
+        mock_convert.side_effect = [[report1], [report2]]
+
+        reports = convert_eval_logs([
+            Path("/path/one.eval"),
+            Path("/path/two.eval"),
+        ])
+
+        assert len(reports) == 2
+        assert reports[0] is report1
+        assert reports[1] is report2
+
+    @patch('avidtools.connectors.inspect.import_eval_log')
+    def test_write_reports_jsonl_writes_all_records(self, mock_import, tmp_path):
+        """JSONL writer should serialize one line per report."""
+        mock_import.return_value = MockEvalLog()
+        output = tmp_path / "reports.jsonl"
+        report = convert_eval_log("/path/to/eval.json")[0]
+        count = write_reports_jsonl([report, Report()], output)
+
+        assert count == 2
+        lines = output.read_text(encoding="utf-8").strip().splitlines()
+        assert len(lines) == 2
+        first = __import__("json").loads(lines[0])
+        assert first["metrics"][0] == {
+            "scorer": "accuracy",
+            "metrics": "accuracy",
+            "value": 0.95,
+        }
 
     @patch('avidtools.connectors.inspect.urlopen')
     def test_fetch_sections_raises_on_unresolved_benchmark(self, mock_urlopen):
