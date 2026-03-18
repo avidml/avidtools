@@ -10,6 +10,7 @@ from typing import Dict, Optional
 from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
 
+from .inspect import _resolve_parties_from_model
 from .utils import (
     apply_normalizations,
     choose_model_subject_label,
@@ -616,13 +617,36 @@ async def _get_probe_summaries_async(
     return probe_cache, module_cache
 
 
-def _shorten_artifact_model_names(report: dict) -> Optional[str]:
+def _apply_party_normalization(report: dict) -> Optional[str]:
+    """Normalize developer, deployer, and artifact names.
+
+    For Together AI deployments (deployer 'together' or 'litellm'), the full
+    model path is reconstructed and passed to ``_resolve_parties_from_model``
+    so that human-readable developer and deployer names are derived alongside
+    the shortened model artifact name.
+
+    For all other models the artifact name is shortened to its last path
+    component and the deployer field is left unchanged.
+
+    Returns the preferred (shortened) model artifact name.
+    """
     affects = report.setdefault("affects", {})
+    deployer_raw = to_list(affects.get("deployer"))
     artifacts = affects.get("artifacts")
     if not isinstance(artifacts, list):
         return None
 
-    preferred_model = None
+    _together_deployers = {"together", "litellm"}
+    is_together = any(
+        v.strip().lower() in _together_deployers for v in deployer_raw
+    )
+
+    preferred_model: Optional[str] = None
+    dev_names: list = []
+    dep_names: list = []
+    seen_dev: set = set()
+    seen_dep: set = set()
+
     for artifact in artifacts:
         if not isinstance(artifact, dict):
             continue
@@ -630,38 +654,33 @@ def _shorten_artifact_model_names(report: dict) -> Optional[str]:
         if not isinstance(name, str):
             continue
 
-        shortened = name.split("/", 1)[1] if "/" in name else name
-        artifact["name"] = shortened
+        if is_together and "/" in name:
+            full_path = f"together/{name}"
+            developer_name, deployer_name, model_name = (
+                _resolve_parties_from_model(full_path)
+            )
+            if developer_name.lower() not in seen_dev:
+                seen_dev.add(developer_name.lower())
+                dev_names.append(developer_name)
+            if deployer_name.lower() not in seen_dep:
+                seen_dep.add(deployer_name.lower())
+                dep_names.append(deployer_name)
+        else:
+            model_name = name.split("/", 1)[1] if "/" in name else name
+
+        artifact["name"] = model_name
         if preferred_model is None:
-            preferred_model = shortened
+            preferred_model = model_name
+
+    if dev_names:
+        affects["developer"] = dev_names
+    if dep_names:
+        affects["deployer"] = dep_names
+    elif is_together and not dep_names:
+        # fallback if no artifacts with org/model pattern were found
+        affects["deployer"] = ["Together AI"]
 
     return preferred_model
-
-
-def _apply_litellm_deployer_mapping(report: dict):
-    affects = report.setdefault("affects", {})
-    deployer = to_list(affects.get("deployer"))
-
-    mapped = []
-    changed = False
-    for value in deployer:
-        normalized = value.strip().lower()
-        if normalized == "litellm" or normalized == "together":
-            mapped.append("Together AI")
-            changed = True
-        else:
-            mapped.append(value)
-
-    if changed:
-        deduped = []
-        seen = set()
-        for value in mapped:
-            key = value.lower()
-            if key in seen:
-                continue
-            seen.add(key)
-            deduped.append(value)
-        affects["deployer"] = deduped
 
 
 def _rebuild_text_descriptions(
@@ -771,8 +790,7 @@ def _normalize_report(
 ):
     """Apply Garak-specific normalize transforms to a single report."""
 
-    preferred_model_name = _shorten_artifact_model_names(report)
-    _apply_litellm_deployer_mapping(report)
+    preferred_model_name = _apply_party_normalization(report)
     apply_normalizations(
         report,
         preferred_model_name=preferred_model_name,

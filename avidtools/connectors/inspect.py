@@ -2,6 +2,7 @@
 
 import json
 import re
+from datetime import date, datetime
 from html import unescape
 from pathlib import Path
 from typing import Any, Iterable, List, Optional, Tuple
@@ -329,6 +330,15 @@ def convert_eval_log(
         f"Evaluation scores:\n{eval_scores_text}"
     )
     report.description = LangValue(lang="eng", value=full_description)
+
+    completed_at = getattr(eval_log.stats, "completed_at", None)
+    if completed_at:
+        try:
+            report.reported_date = datetime.fromisoformat(
+                str(completed_at)
+            ).date()
+        except (ValueError, TypeError):
+            pass
 
     if normalize:
         report_payload = (
