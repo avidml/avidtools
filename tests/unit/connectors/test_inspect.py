@@ -58,6 +58,10 @@ class MockEvalLog:
         self.results = Mock()
         self.results.scores = [mock_score]
 
+        # Stats with completion timestamp
+        self.stats = Mock()
+        self.stats.completed_at = "2024-03-15T10:30:00+00:00"
+
 
 class TestInspectConnector:
     """Test cases for Inspect connector functions."""
@@ -108,6 +112,19 @@ class TestInspectConnector:
         report = reports[0]
         assert report.data_type == "AVID"
         assert report.data_version == "0.3.1"
+        assert report.reported_date is not None
+
+    @patch('avidtools.connectors.inspect.import_eval_log')
+    def test_convert_eval_log_reported_date(self, mock_import):
+        """Test that reported_date is set from eval log completed_at."""
+        from datetime import date
+        mock_eval_log = MockEvalLog()
+        mock_import.return_value = mock_eval_log
+
+        reports = convert_eval_log("/path/to/eval.json")
+        report = reports[0]
+
+        assert report.reported_date == date(2024, 3, 15)
 
     @patch('avidtools.connectors.inspect.import_eval_log')
     def test_convert_eval_log_affects(self, mock_import):
