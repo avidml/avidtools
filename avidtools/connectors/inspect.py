@@ -2,7 +2,7 @@
 
 import json
 import re
-from datetime import date, datetime
+from datetime import datetime
 from html import unescape
 from pathlib import Path
 from typing import Any, Iterable, List, Optional, Tuple
