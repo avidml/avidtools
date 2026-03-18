@@ -241,7 +241,7 @@ class TestInspectConnector:
         reports = convert_eval_log("/path/to/eval.json")
         report = reports[0]
 
-        assert report.affects.developer == ["MiniMax"]
+        assert report.affects.developer == ["Minimax"]
         assert report.affects.deployer == ["Together AI"]
         assert report.affects.artifacts[0].name == "MiniMax-M2.5"
 
