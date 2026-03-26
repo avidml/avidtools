@@ -116,6 +116,10 @@ def extract_cve_details(cve: dict[str, Any]) -> dict[str, Any]:
 
     metrics = cna.get("metrics", [])
     for metric in metrics:
+        # Check for CVSS versions in priority order (newest first)
+        if "cvssV4_0" in metric:
+            details["cvss_data"] = metric["cvssV4_0"]
+            break
         if "cvssV3_1" in metric:
             details["cvss_data"] = metric["cvssV3_1"]
             break
